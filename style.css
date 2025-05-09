@@ -1,0 +1,201 @@
+#calendar {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    min-height: 640px;
+    height: auto;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.fc-daygrid {
+    height: auto;
+    min-height: 100%;
+}
+
+.fc-daygrid-body {
+    display: table;
+    width: 100%;
+}
+
+.fc-scroller {
+    overflow-y: auto !important;
+}
+
+.fc-daygrid-day {
+    position: relative;
+    height: auto;
+    min-height: 100%;
+}
+
+.fc-daygrid-day-frame {
+    position: relative;
+    min-height: 100%;
+}
+
+.fc-daygrid-day-top {
+    position: relative;
+}
+
+.date-tickbox {
+    position: absolute;
+    top: 4px;
+    left: 40px;
+    width: 16px;
+    height: 16px;
+    z-index: 10;
+    -webkit-appearance: checkbox;
+    appearance: checkbox;
+}
+
+.fc-event {
+    cursor: pointer;
+    border: none !important;
+    padding: 5px !important;
+    font-size: 14px !important;
+    position: relative;
+    z-index: 5;
+    margin-bottom: 2px;
+}
+
+.fc-event.hong-kong {
+    background-color: #4169E1;
+    color: white;
+}
+
+.fc-event.macau {
+    background-color: #B0C4DE;
+    color: black;
+}
+
+.fc-event.fully-assigned-hong-kong {
+    background-color: #8FD400;
+    color: black;
+}
+
+.fc-event.fully-assigned-macau {
+    background-color: #A7F432;
+    color: black;
+}
+
+.fc-event.selected {
+    background-color: #E3242B;
+    color: white;
+}
+
+.fc-daygrid-day.interpreter-assigned {
+    background-color: #FFDAB9;
+}
+
+.fc-daygrid-day.interpreter-overlap {
+    background-color: #FF8C00;
+}
+
+.fc-daygrid-day.working-day {
+    background-color: #00FF00;
+}
+
+.event-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+}
+
+.event-row input,
+.event-row select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    min-width: 120px;
+    text-align: center;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.event-row input[data-field="interpreters"],
+.event-row input[data-field="interpretersLeft"] {
+    width: 120px;
+}
+
+.event-row input[data-field="assigned"] {
+    width: 360px;
+    font-size: 14px;
+    white-space: normal;
+    overflow-wrap: break-word;
+    min-height: 40px;
+    resize: none;
+    cursor: pointer;
+    background-color: #FFFFFF;
+}
+
+.event-row input[data-field="assigned"].editing {
+    background-color: #FFA500;
+}
+
+.delete-icon {
+    background-color: #E3242B;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.delete-icon:hover {
+    background-color: #B22222;
+}
+
+#interpreterTable {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    height: 100%;
+    max-height: 520px;
+    overflow-y: auto !important;
+}
+
+#interpreterTable table {
+    width: 100%;
+}
+
+#interpreterTable th,
+#interpreterTable td {
+    padding: 8px;
+    border: 1px solid #ccc;
+    text-align: center;
+}
+
+#interpreterTable tbody tr {
+    cursor: pointer;
+    background-color: #FFFFFF;
+}
+
+#interpreterTable tbody tr:hover {
+    background-color: #f0f0f0;
+}
+
+#interpreterTable tbody tr.selected {
+    background-color: #FFA500;
+}
+
+#interpreterTable tbody tr.interpreter-assigned {
+    background-color: #FFDAB9;
+}
+
+#selectedEvents {
+    margin-bottom: 100px;
+}
