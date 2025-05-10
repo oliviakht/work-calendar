@@ -123,12 +123,12 @@
 
 .event-row input[data-field="interpreters"],
 .event-row input[data-field="interpretersLeft"] {
-    width: 60px;
+    width: 120px;
 }
 
 .event-row input[data-field="assigned"] {
-    width: 500px;
-    font-size: 12px;
+    width: 360px;
+    font-size: 14px;
     white-space: normal;
     overflow-wrap: break-word;
     min-height: 40px;
@@ -149,10 +149,11 @@
     width: 24px;
     height: 24px;
     display: flex;
-    align-items: end;
+    align-items: center;
     justify-content: center;
     cursor: pointer;
     font-size: 16px;
+    margin-left:auto;
 }
 
 .delete-icon:hover {
