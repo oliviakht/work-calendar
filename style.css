@@ -123,12 +123,12 @@
 
 .event-row input[data-field="interpreters"],
 .event-row input[data-field="interpretersLeft"] {
-    width: 120px;
+    width: 60px;
 }
 
 .event-row input[data-field="assigned"] {
-    width: 360px;
-    font-size: 14px;
+    width: 500px;
+    font-size: 12px;
     white-space: normal;
     overflow-wrap: break-word;
     min-height: 40px;
@@ -149,7 +149,7 @@
     width: 24px;
     height: 24px;
     display: flex;
-    align-items: center;
+    align-items: end;
     justify-content: center;
     cursor: pointer;
     font-size: 16px;
