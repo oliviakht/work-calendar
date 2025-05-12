@@ -807,7 +807,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (assigningInterpreter) {
             label.textContent = `Assigning for ${assigningInterpreter.name}`;
             label.style.display = 'block';
-        } else {:
+        } else {
             label.style.display = 'none';
         }
     }
