@@ -47,6 +47,8 @@
     width: 16px;
     height: 16px;
     z-index: 10;
+    -webkit-appearance: checkbox;
+    appearance: auto;
 }
 
 .fc-event {
@@ -57,6 +59,7 @@
     position: relative;
     z-index: 5;
     margin-bottom: 2px;
+    border-radius: 4px;
 }
 
 .fc-event.hong-kong {
@@ -70,30 +73,33 @@
 }
 
 .fc-event.fully-assigned-hong-kong {
-    background-color: #8FD400;
+    background-color: #FFEF00;
     color: black;
 }
 
 .fc-event.fully-assigned-macau {
-    background-color: #A7F432;
+    background-color: #FFF600;
     color: black;
 }
 
 .fc-event.selected {
-    background-color: #E3242B;
+    background-color: #FC2400;
     color: white;
 }
 
-.fc-daygrid-day.interpreter-assigned {
-    background-color: #FFDAB9;
+.fc .fc-daygrid-day.interpreter-assigned {
+    background: #FFDAB9 !important;
+    border: 1px solid #ddd !important;
 }
 
-.fc-daygrid-day.interpreter-overlap {
-    background-color: #FF8C00;
+.fc .fc-daygrid-day.interpreter-overlap {
+    background: #FF8C00 !important;
+    border: 1px solid #ddd !important;
 }
 
-.fc-daygrid-day.working-day {
-    background-color: #00FF00;
+.fc .fc-daygrid-day.interpreter-working {
+    background: #00FF00 !important;
+    border: 1px solid #ddd !important;
 }
 
 .event-row {
@@ -117,6 +123,10 @@
     text-align: center;
     -webkit-appearance: none;
     appearance: none;
+}
+
+.event-row input[data-field="title"] {
+    width: 256px;
 }
 
 .event-row input[data-field="interpreters"],
@@ -157,17 +167,45 @@
     background-color: #B22222;
 }
 
+.interpreter-row {
+    background-color: #f0f0f0;
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    width: 100%;
+}
+
+.interpreter-row .interpreter-list {
+    flex: 1;
+}
+
+.interpreter-row .assign-controls {
+    flex: 1;
+}
+
+.interpreter-row input[list] {
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9em;
+    margin-left: 8px;
+    width: 150px;
+}
+
 #interpreterTable {
     background-color: white;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    height: 100%;
-    max-height: 520px;
-    overflow-y: auto !important;
+    max-height: 570px;
+    overflow-y: auto;
 }
 
 #interpreterTable table {
     width: 100%;
+    border-collapse: collapse;
 }
 
 #interpreterTable th,
@@ -175,6 +213,25 @@
     padding: 8px;
     border: 1px solid #ccc;
     text-align: center;
+}
+
+#interpreterTable th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+}
+
+#interpreterTable th:nth-child(1),
+#interpreterTable td:nth-child(1) {
+    width: 60%; /* Name column takes 60% */
+}
+
+#interpreterTable th:nth-child(2),
+#interpreterTable td:nth-child(2),
+#interpreterTable th:nth-child(3),
+#interpreterTable td:nth-child(3),
+#interpreterTable th:nth-child(4),
+#interpreterTable td:nth-child(4) {
+    width: 13.33%; /* Each icon column takes ~13.33% of remaining 40% */
 }
 
 #interpreterTable tbody tr {
@@ -194,6 +251,96 @@
     background-color: #FFDAB9;
 }
 
+.assign-btn, .edit-int, .delete-int, .assign-mode-btn {
+    padding: 4px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.assign-btn {
+    background-color: #e0e0e0;
+    margin: 2px 5px 2px 0;
+}
+
+.assign-btn:hover {
+    background-color: #d0d0d0;
+}
+
+.edit-int {
+    background-color: #FFA500;
+    color: white;
+}
+
+.edit-int:hover {
+    background-color: #FF8C00;
+}
+
+.delete-int {
+    background-color: #E3242B;
+    color: white;
+}
+
+.delete-int:hover {
+    background-color: #B22222;
+}
+
+.assign-mode-btn {
+    background-color: #4169E1;
+    color: white;
+}
+
+.assign-mode-btn:hover {
+    background-color: #3051B0;
+}
+
+.assigned-chip {
+    background: #dff0d8;
+    margin-right: 4px;
+    padding: 2px 7px;
+    border-radius: 12px;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.assigned-chip:hover {
+    background: #c0e0b0;
+}
+
+#assigning-label {
+    background-color: #e0e0e0;
+    padding: 8px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    text-align: center;
+    font-weight: bold;
+}
+
+#prevMonth, #nextMonth, #todayBtn {
+    background-color: #4169E1;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+#prevMonth:hover, #nextMonth:hover, #todayBtn:hover {
+    background-color: #3051B0;
+}
+
+#monthSelector {
+    text-align: center;
+}
+
 #selectedEvents {
     margin-bottom: 100px;
+}
+
+@media (max-width: 768px) {
+    .date-tickbox {
+        left: 4px;
+    }
 }
