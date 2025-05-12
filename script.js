@@ -1,73 +1,4 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // --- Storage Setup (localStorage) ---
-    function saveEvents(events) {
-        try {
-            localStorage.setItem('calendarEvents', JSON.stringify(events));
-            console.log('Events saved to localStorage:', events);
-        } catch (error) {
-            console.error('Save events to localStorage error:', error);
-            alert('Failed to save events to localStorage. Data may not persist. Error: ' + error.message);
-        }
-    }
-
-    function loadEvents() {
-        try {
-            const data = localStorage.getItem('calendarEvents');
-            const events = data ? JSON.parse(data) : [];
-            console.log('Events loaded from localStorage:', events);
-            return events;
-        } catch (error) {
-            console.error('Load events from localStorage error:', error);
-            return [];
-        }
-    }
-
-    function saveInterpreters(interpreters) {
-        try {
-            localStorage.setItem('calendarInterpreters', JSON.stringify(interpreters));
-            console.log('Interpreters saved to localStorage:', interpreters);
-        } catch (error) {
-            console.error('Save interpreters to localStorage error:', error);
-            alert('Failed to save interpreters to localStorage. Data may not persist. Error: ' + error.message);
-        }
-    }
-
-    function loadInterpreters() {
-        try {
-            const data = localStorage.getItem('calendarInterpreters');
-            const interpreters = data ? JSON.parse(data) : [];
-            console.log('Interpreters loaded from localStorage:', interpreters);
-            return interpreters;
-        } catch (error) {
-            console.error('Load interpreters from localStorage error:', error);
-            return [];
-        }
-    }
-
-    function saveAssignments(interpreterId, assignments) {
-        try {
-            let allAssignments = JSON.parse(localStorage.getItem('calendarAssignments') || '{}');
-            allAssignments[interpreterId] = assignments;
-            localStorage.setItem('calendarAssignments', JSON.stringify(allAssignments));
-            console.log('Assignments saved to localStorage for:', interpreterId, assignments);
-        } catch (error) {
-            console.error('Save assignments to localStorage error:', error);
-            alert('Failed to save assignments to localStorage. Data may not persist. Error: ' + error.message);
-        }
-    }
-
-    function loadAssignments() {
-        try {
-            const data = localStorage.getItem('calendarAssignments');
-            const assignments = data ? JSON.parse(data) : {};
-            console.log('Assignments loaded from localStorage:', assignments);
-            return assignments;
-        } catch (error) {
-            console.error('Load assignments from localStorage error:', error);
-            return {};
-        }
-    }
-
     // --- Firebase Setup ---
     const firebaseConfig = {
         apiKey: "AIzaSyBhkRkIeGLYdqRKeRpOVM3uPq_a3DVOrkM",
@@ -82,76 +13,34 @@ document.addEventListener('DOMContentLoaded', function () {
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // --- Firestore Storage Functions (Fallback to localStorage) ---
+    // --- Firestore Storage Functions ---
     async function saveEventsToFirestore(events) {
-        try {
-            await db.collection('calendar').doc('events').set({ events });
-            console.log('Events saved to Firestore:', events);
-        } catch (error) {
-            console.error('Save events to Firestore error:', error);
-            saveEvents(events); // Fallback to localStorage
-            alert('Failed to save events to Firestore. Saved to localStorage instead. Error: ' + error.message);
-        }
+        await db.collection('calendar').doc('events').set({ events });
     }
 
     async function loadEventsFromFirestore() {
-        try {
-            const doc = await db.collection('calendar').doc('events').get();
-            const events = doc.exists ? doc.data().events : [];
-            console.log('Events loaded from Firestore:', events);
-            return events;
-        } catch (error) {
-            console.error('Load events from Firestore error:', error);
-            return loadEvents();
-        }
+        const doc = await db.collection('calendar').doc('events').get();
+        return doc.exists ? doc.data().events : [];
     }
 
     async function saveInterpretersToFirestore(interpreters) {
-        try {
-            await db.collection('calendar').doc('interpreters').set({ interpreters });
-            console.log('Interpreters saved to Firestore:', interpreters);
-        } catch (error) {
-            console.error('Save interpreters to Firestore error:', error);
-            saveInterpreters(interpreters); // Fallback to localStorage
-            alert('Failed to save interpreters to Firestore. Saved to localStorage instead. Error: ' + error.message);
-        }
+        await db.collection('calendar').doc('interpreters').set({ interpreters });
     }
 
     async function loadInterpretersFromFirestore() {
-        try {
-            const doc = await db.collection('calendar').doc('interpreters').get();
-            const interpreters = doc.exists ? doc.data().interpreters : [];
-            console.log('Interpreters loaded from Firestore:', interpreters);
-            return interpreters;
-        } catch (error) {
-            console.error('Load interpreters from Firestore error:', error);
-            return loadInterpreters();
-        }
+        const doc = await db.collection('calendar').doc('interpreters').get();
+        return doc.exists ? doc.data().interpreters : [];
     }
 
     async function saveAssignmentsToFirestore(interpreterId, assignments) {
-        try {
-            let allAssignments = await loadAssignmentsFromFirestore();
-            allAssignments[interpreterId] = assignments;
-            await db.collection('calendar').doc('assignments').set(allAssignments);
-            console.log('Assignments saved to Firestore for:', interpreterId, assignments);
-        } catch (error) {
-            console.error('Save assignments to Firestore error:', error);
-            saveAssignments(interpreterId, assignments); // Fallback to localStorage
-            alert('Failed to save assignments to Firestore. Saved to localStorage instead. Error: ' + error.message);
-        }
+        let allAssignments = await loadAssignmentsFromFirestore();
+        allAssignments[interpreterId] = assignments;
+        await db.collection('calendar').doc('assignments').set(allAssignments);
     }
 
     async function loadAssignmentsFromFirestore() {
-        try {
-            const doc = await db.collection('calendar').doc('assignments').get();
-            const assignments = doc.exists ? doc.data() : {};
-            console.log('Assignments loaded from Firestore:', assignments);
-            return assignments;
-        } catch (error) {
-            console.error('Load assignments from Firestore error:', error);
-            return loadAssignments();
-        }
+        const doc = await db.collection('calendar').doc('assignments').get();
+        return doc.exists ? doc.data() : {};
     }
 
     // --- DOM Elements ---
@@ -175,22 +64,10 @@ document.addEventListener('DOMContentLoaded', function () {
         intInputs: {
             name: document.getElementById('intName'),
             fullName: document.getElementById('intFullName'),
+            gender: document.getElementById('intGender'),
             idName: document.getElementById('intIdName')
         }
     };
-
-    // Validate DOM elements
-    Object.entries(elements).forEach(([key, el]) => {
-        if (!el && typeof el !== 'object') console.error(`Element ${key} not found`);
-    });
-
-    // Create assigning label
-    const calendarContainer = elements.calendar.parentElement;
-    const assigningLabel = document.createElement('div');
-    assigningLabel.id = 'assigning-label';
-    assigningLabel.style.display = 'none';
-    assigningLabel.className = 'text-center text-lg font-semibold mb-2';
-    calendarContainer.insertBefore(assigningLabel, elements.calendar);
 
     // --- State ---
     let events = [];
@@ -206,7 +83,6 @@ document.addEventListener('DOMContentLoaded', function () {
         headerToolbar: { left: '', center: '', right: '' }, // Disable default header
         events: [],
         eventClick: function (info) {
-            console.log('Event clicked:', info.event.id, 'Selected:', selectedEvents);
             const eventId = info.event.id;
             const isSelected = selectedEvents.includes(eventId);
 
@@ -235,17 +111,22 @@ document.addEventListener('DOMContentLoaded', function () {
         dayCellClassNames: function (info) {
             const classes = [];
             if (!assigningInterpreter) {
-                console.log('No assigning interpreter for date:', info.date.toISOString());
+                return classes;
+            }
+
+            // Safety check: Ensure info.el exists before accessing getAttribute
+            if (!info.el) {
                 return classes;
             }
 
             const dateStr = info.el.getAttribute('data-date');
-            console.log(`Processing date: ${dateStr}, Interpreter: ${assigningInterpreter.id}, Events:`, events);
+            if (!dateStr) {
+                return classes;
+            }
 
             const assignments = interpreterAssignments[assigningInterpreter.id] || {};
             if (assignments[dateStr]) {
                 classes.push('interpreter-working');
-                console.log(`Assigning interpreter-working to ${dateStr}`);
                 return classes;
             }
 
@@ -253,32 +134,19 @@ document.addEventListener('DOMContentLoaded', function () {
             events.forEach(event => {
                 const startStr = event.start.split('T')[0];
                 const endStr = event.end ? event.end.split('T')[0] : startStr;
-                console.log(`Event ${event.id}: Start=${startStr}, End=${endStr}, InterpreterIds=`, event.interpreterIds);
-
                 if ((event.interpreterIds || []).includes(assigningInterpreter.id)) {
-                    const startDate = new Date(startStr);
-                    const endDate = new Date(endStr);
-                    const currentDate = new Date(dateStr);
-                    startDate.setHours(0, 0, 0, 0);
-                    endDate.setHours(0, 0, 0, 0);
-                    currentDate.setHours(0, 0, 0, 0);
-
-                    if (currentDate >= startDate && currentDate < endDate) {
+                    if (dateStr >= startStr && dateStr < endStr) {
                         eventCount++;
-                        console.log(`Match: Event ${event.id} on ${dateStr}, Count: ${eventCount}`);
                     }
                 }
             });
 
             if (eventCount >= 2) {
                 classes.push('interpreter-overlap');
-                console.log(`Assigning interpreter-overlap to ${dateStr} (Count: ${eventCount})`);
             } else if (eventCount === 1) {
                 classes.push('interpreter-assigned');
-                console.log(`Assigning interpreter-assigned to ${dateStr}`);
             }
 
-            console.log(`Classes for ${dateStr}:`, classes);
             return classes;
         },
         dayCellDidMount: function (info) {
@@ -288,7 +156,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (topElement) {
                 let tickbox = topElement.querySelector(`#tickbox-${dateStr}`);
                 if (!tickbox) {
-                    console.log('Creating tickbox for:', dateStr);
                     tickbox = document.createElement('input');
                     tickbox.type = 'checkbox';
                     tickbox.className = 'date-tickbox';
@@ -300,10 +167,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (assigningInterpreter) {
                     const assignments = interpreterAssignments[assigningInterpreter.id] || {};
                     tickbox.checked = !!assignments[dateStr];
-                    console.log(`Tickbox ${dateStr} initialized: checked=${tickbox.checked}`);
                 }
-            } else {
-                console.warn(`Top element not found for date: ${dateStr}`);
             }
         },
         eventContent: function (arg) {
@@ -317,7 +181,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const tickbox = event.target;
             const dateStr = tickbox.id.replace('tickbox-', '');
             if (!assigningInterpreter) {
-                console.warn(`Tickbox ${dateStr} changed but no assigning interpreter`);
                 return;
             }
 
@@ -327,8 +190,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             interpreterAssignments[interpreterId][dateStr] = tickbox.checked;
             saveAssignmentsToFirestore(interpreterId, interpreterAssignments[interpreterId]).then(() => {
-                console.log(`Tickbox ${dateStr} changed: checked=${tickbox.checked}, Assignments:`, interpreterAssignments[interpreterId]);
-
                 document.querySelectorAll('.fc-daygrid-day').forEach(cell => {
                     const cellDateStr = cell.getAttribute('data-date');
                     if (!cellDateStr || !assigningInterpreter) {
@@ -339,7 +200,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         cell.classList.remove('interpreter-assigned', 'interpreter-overlap', 'interpreter-working');
                         if (tickbox.checked) {
                             cell.classList.add('interpreter-working');
-                            console.log(`Manually applied interpreter-working to ${dateStr}`);
                         } else {
                             let eventCount = 0;
                             events.forEach(event => {
@@ -362,15 +222,12 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     function updateTickBoxes() {
-        console.log('Updating tickboxes, Assigning Interpreter:', assigningInterpreter ? assigningInterpreter.id : 'none');
         document.querySelectorAll('.date-tickbox').forEach(tickbox => {
             const dateStr = tickbox.id.replace('tickbox-', '');
             tickbox.disabled = !assigningInterpreter;
             if (assigningInterpreter) {
                 const assignments = interpreterAssignments[assigningInterpreter.id] || {};
                 tickbox.checked = !!assignments[dateStr];
-            } else {
-                tickbox.checked = false;
             }
         });
         calendar.render();
@@ -454,7 +311,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         selectedEvents.forEach(eventId => {
             const event = events.find(e => e.id === eventId);
-            console.log('Rendering SEA for event:', eventId, 'Found:', !!event);
             if (!event) return;
 
             const interpretersNeeded = parseInt(event.interpreters) || 0;
@@ -576,7 +432,6 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             if (selectedEvents.includes(eventId)) {
-                console.log('Rendering assign controls for event:', eventId, 'Interpreter IDs:', event.interpreterIds);
                 const assignDiv = row.querySelector('.assign-controls');
                 const first12 = interpreters.slice(0, 12).filter(i => !event.interpreterIds.includes(i.id));
                 first12.forEach(interpreter => {
@@ -586,7 +441,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     btn.addEventListener('click', async () => {
                         if (!event.interpreterIds.includes(interpreter.id)) {
                             event.interpreterIds.push(interpreter.id);
-                            console.log('Assigned interpreter:', interpreter.id, 'to event:', eventId, 'New interpreterIds:', event.interpreterIds);
                             const interpretersNeeded = parseInt(event.interpreters) || 0;
                             const assignedCount = (event.interpreterIds || []).length;
                             row.querySelector('input[data-field="interpretersLeft"]').value = interpretersNeeded - assignedCount;
@@ -608,7 +462,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
 
                 const remaining = interpreters.slice(12).filter(i => !event.interpreterIds.includes(i.id));
-                console.log('Remaining interpreters for datalist:', remaining.length, remaining.map(i => i.name));
                 if (remaining.length > 0) {
                     const usageCounts = {};
                     interpreters.forEach(i => {
@@ -634,7 +487,6 @@ document.addEventListener('DOMContentLoaded', function () {
                             const interpreterId = selectedOption.dataset.id;
                             if (!event.interpreterIds.includes(interpreterId)) {
                                 event.interpreterIds.push(interpreterId);
-                                console.log('Assigned interpreter via datalist:', interpreterId, 'to event:', eventId, 'New interpreterIds:', event.interpreterIds);
                                 const interpretersNeeded = parseInt(event.interpreters) || 0;
                                 const assignedCount = (event.interpreterIds || []).length;
                                 row.querySelector('input[data-field="interpretersLeft"]').value = interpretersNeeded - assignedCount;
@@ -668,9 +520,9 @@ document.addEventListener('DOMContentLoaded', function () {
             id: editingInterpreterId || Date.now().toString(),
             name: elements.intInputs.name.value || 'Unnamed',
             fullName: elements.intInputs.fullName.value || 'Unnamed',
+            gender: elements.intInputs.gender.value || 'F',
             idName: elements.intInputs.idName.value || 'None'
         };
-        console.log('Adding/Editing interpreter:', interpreter, 'Editing ID:', editingInterpreterId);
 
         const existingIndex = interpreters.findIndex(i => i.id === interpreter.id);
         if (existingIndex !== -1) {
@@ -680,6 +532,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         Object.values(elements.intInputs).forEach(input => input.value = '');
+        elements.intInputs.gender.value = 'F'; // Reset to default
         editingInterpreterId = null;
         assigningInterpreter = null;
         updateTickBoxes();
@@ -690,55 +543,84 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     function renderInterpreters() {
-        console.log('Rendering interpreters:', interpreters);
         elements.interpreterList.innerHTML = '';
-        interpreters.forEach(interpreter => {
+        interpreters.forEach((interpreter, index) => {
             const row = document.createElement('tr');
             row.dataset.id = interpreter.id;
+            row.draggable = true; // Make the row draggable
             row.className = assigningInterpreter && assigningInterpreter.id === interpreter.id ? 'interpreter-assigned' : '';
             row.innerHTML = `
-                <td>${interpreter.name}</td>
+                <td>
+                    <div class="flex items-center">
+                        <div class="w-full text-center">${interpreter.name}</div>
+                        <span class="drag-handle" title="Drag to reorder">☰</span>
+                    </div>
+                </td>
                 <td><button class="assign-mode-btn" title="Assign Working Days">🗓️</button></td>
                 <td><button class="edit-int" title="Edit">✏️</button></td>
                 <td><button class="delete-int" title="Delete">🗑️</button></td>
             `;
 
+            // Drag-and-drop event listeners
+            row.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', interpreter.id);
+                row.classList.add('dragging');
+            });
+
+            row.addEventListener('dragend', () => {
+                row.classList.remove('dragging');
+            });
+
+            row.addEventListener('dragover', (e) => {
+                e.preventDefault();
+            });
+
+            row.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                const draggedId = e.dataTransfer.getData('text/plain');
+                const draggedInterpreter = interpreters.find(i => i.id === draggedId);
+                const targetIndex = interpreters.findIndex(i => i.id === interpreter.id);
+
+                if (draggedId !== interpreter.id) {
+                    interpreters = interpreters.filter(i => i.id !== draggedId);
+                    interpreters.splice(targetIndex, 0, draggedInterpreter);
+                    await saveInterpretersToFirestore(interpreters);
+                    renderInterpreters();
+                }
+            });
+
             const assignBtn = row.querySelector('.assign-mode-btn');
             assignBtn.addEventListener('click', async () => {
-                console.log('Assign button clicked for:', interpreter.id, 'Current mode:', assigningInterpreter ? assigningInterpreter.id : 'none', 'Events:', events);
                 if (assigningInterpreter && assigningInterpreter.id === interpreter.id) {
                     await saveAssignmentsToFirestore(interpreter.id, interpreterAssignments[interpreter.id] || {});
                     assigningInterpreter = null;
-                    console.log('Exiting assigning mode');
                 } else {
                     if (assigningInterpreter) {
                         await saveAssignmentsToFirestore(assigningInterpreter.id, interpreterAssignments[assigningInterpreter.id] || {});
                     }
                     assigningInterpreter = { id: interpreter.id, name: interpreter.name };
-                    console.log('Entering assigning mode for:', assigningInterpreter);
                 }
                 renderInterpreters();
                 updateTickBoxes();
                 calendar.render();
 
                 document.querySelectorAll('.fc-daygrid-day').forEach(cell => {
-                    const dateStr = cell.getAttribute('data-date');
-                    if (!dateStr || !assigningInterpreter) {
+                    const cellDateStr = cell.getAttribute('data-date');
+                    if (!cellDateStr || !assigningInterpreter) {
                         cell.classList.remove('interpreter-assigned', 'interpreter-overlap', 'interpreter-working');
                         return;
                     }
                     const assignments = interpreterAssignments[assigningInterpreter.id] || {};
-                    if (assignments[dateStr]) {
+                    if (assignments[cellDateStr]) {
                         cell.classList.remove('interpreter-assigned', 'interpreter-overlap');
                         cell.classList.add('interpreter-working');
-                        console.log(`Manually applied interpreter-working to ${dateStr}`);
                     } else {
                         let eventCount = 0;
                         events.forEach(event => {
                             if ((event.interpreterIds || []).includes(assigningInterpreter.id)) {
                                 const start = new Date(event.start.split('T')[0]);
                                 const end = new Date((event.end || event.start).split('T')[0]);
-                                const current = new Date(dateStr);
+                                const current = new Date(cellDateStr);
                                 if (current >= start && current < end) eventCount++;
                             }
                         });
@@ -751,12 +633,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const editBtn = row.querySelector('.edit-int');
             editBtn.addEventListener('click', () => {
-                console.log('Edit button clicked for interpreter:', interpreter.id);
                 elements.intInputs.name.value = interpreter.name;
                 elements.intInputs.fullName.value = interpreter.fullName;
+                elements.intInputs.gender.value = interpreter.gender || 'F';
                 elements.intInputs.idName.value = interpreter.idName;
                 editingInterpreterId = interpreter.id;
-                console.log('Set editingInterpreterId:', editingInterpreterId);
             });
 
             const deleteBtn = row.querySelector('.delete-int');
@@ -799,24 +680,21 @@ document.addEventListener('DOMContentLoaded', function () {
     loadAllDataAndRender();
 
     function updateAssigningLabel() {
-        const label = document.getElementById('assigning-label');
+        const label = document.getElementById('assigning-box');
         if (!label) {
-            console.warn('Assigning label not found');
             return;
         }
         if (assigningInterpreter) {
             label.textContent = `Assigning for ${assigningInterpreter.name}`;
-            label.style.display = 'block';
+            label.classList.remove('hidden');
         } else {
-            label.style.display = 'none';
+            label.classList.add('hidden');
         }
     }
 
     const originalRender = calendar.render.bind(calendar);
     calendar.render = function () {
-        console.log('Rendering calendar, assigningInterpreter:', assigningInterpreter ? assigningInterpreter.id : 'none');
         originalRender();
         updateAssigningLabel();
-        console.log('Calendar rendered');
     };
 });

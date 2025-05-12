@@ -31,11 +31,6 @@
     min-height: 100%;
 }
 
-.fc-daygrid-day-frame {
-    position: relative;
-    min-height: 100%;
-}
-
 .fc-daygrid-day-top {
     position: relative;
 }
@@ -73,7 +68,7 @@
 }
 
 .fc-event.fully-assigned-hong-kong {
-    background-color: #FFEF00;
+    background-color: #FFD801;
     color: black;
 }
 
@@ -132,21 +127,6 @@
 .event-row input[data-field="interpreters"],
 .event-row input[data-field="interpretersLeft"] {
     width: 120px;
-}
-
-.event-row input[data-field="assigned"] {
-    width: 360px;
-    font-size: 14px;
-    white-space: normal;
-    overflow-wrap: break-word;
-    min-height: 40px;
-    resize: none;
-    cursor: pointer;
-    background-color: #FFFFFF;
-}
-
-.event-row input[data-field="assigned"].editing {
-    background-color: #FFA500;
 }
 
 .delete-icon {
@@ -243,15 +223,11 @@
     background-color: #f0f0f0;
 }
 
-#interpreterTable tbody tr.selected {
-    background-color: #FFA500;
-}
-
 #interpreterTable tbody tr.interpreter-assigned {
     background-color: #FFDAB9;
 }
 
-.assign-btn, .edit-int, .delete-int, .assign-mode-btn {
+.assign-btn, .edit-int, .delete-int, .assign-mode-btn, .drag-handle {
     padding: 4px 10px;
     border: none;
     border-radius: 4px;
@@ -295,6 +271,18 @@
     background-color: #3051B0;
 }
 
+.drag-handle {
+    background-color: transparent;
+    color: #D3D3D3;
+    cursor: move;
+    font-weight: bold;
+    margin-left: auto;
+}
+
+.drag-handle:hover {
+    color: #A9A9A9;
+}
+
 .assigned-chip {
     background: #dff0d8;
     margin-right: 4px;
@@ -315,20 +303,6 @@
     margin-bottom: 8px;
     text-align: center;
     font-weight: bold;
-}
-
-#prevMonth, #nextMonth, #todayBtn {
-    background-color: #4169E1;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 12px;
-    cursor: pointer;
-    font-size: 0.9em;
-}
-
-#prevMonth:hover, #nextMonth:hover, #todayBtn:hover {
-    background-color: #3051B0;
 }
 
 #monthSelector {

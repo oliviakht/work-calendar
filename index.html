@@ -21,7 +21,7 @@
             </select>
             <input id="startDate" type="date" class="p-2 border rounded w-[150px]">
             <input id="endDate" type="date" class="p-2 border rounded w-[150px]">
-            <input id="interpreters" type="number" min="0" placeholder="Interpreters Needed" class="p-2 border rounded w-[150px]">
+            <input id="interpreters" type="number" min="0" placeholder="Interpreters No." class="p-2 border rounded w-[150px]">
             <button id="enterBtn" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Enter</button>
         </div>
     </div>
@@ -32,7 +32,7 @@
             <!-- Calendar (Left, 60%) -->
             <div class="flex-[0.6]">
                 <h2 class="text-2xl font-bold mb-4 text-center">Calendar</h2>
-                <div class="flex justify-center gap-2 items-center mb-4">
+                <div class="flex justify-center gap-2 items-center">
                     <button id="prevMonth" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"><</button>
                     <select id="monthSelector" class="p-2 border rounded w-full max-w-[200px]">
                         <option value="0">January</option>
@@ -50,6 +50,7 @@
                     </select>
                     <button id="nextMonth" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">></button>
                     <button id="todayBtn" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Today</button>
+                    <span id="assigning-box" class="px-3 py-1 rounded bg-orange-200 text-red-600 hidden"></span>
                 </div>
                 <div id="calendar"></div>
             </div>
@@ -59,7 +60,11 @@
                 <h2 class="text-2xl font-bold mb-4 text-center">Interpreters</h2>
                 <div class="flex flex-wrap gap-3 mb-6">
                     <input id="intName" type="text" placeholder="Name" class="p-2 border rounded flex-1 min-w-[150px]">
-                    <input id="intFullName" type="text" placeholder="Full Name" class="p-2 border rounded flex-1 min-w-[150px]">
+                    <input id="intFullName" type="text" placeholder="Full Name" class="p-2 border rounded flex-1 min-w-[80px]">
+                    <select id="intGender" class="p-2 border rounded w-[60px]">
+                        <option value="M">M</option>
+                        <option value="F" selected>F</option>
+                    </select>
                     <input id="intIdName" type="text" placeholder="ID Name" class="p-2 border rounded flex-1 min-w-[150px]">
                     <button id="intEnterBtn" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Enter</button>
                 </div>
