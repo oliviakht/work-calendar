@@ -52,6 +52,7 @@ document.addEventListener('DOMContentLoaded', function () {
         todayBtn: document.getElementById('todayBtn'),
         enterBtn: document.getElementById('enterBtn'),
         eventList: document.getElementById('eventList'),
+        exitAllBtn: document.getElementById('exitAllBtn'),
         intEnterBtn: document.getElementById('intEnterBtn'),
         interpreterList: document.getElementById('interpreterList'),
         inputs: {
@@ -95,13 +96,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     calEvent.remove();
                     calendar.addEvent(event);
                 }
-                assigningInterpreter = null;
-                updateTickBoxes();
+                updateTickBoxes(); // Keep tickboxes updated, but don't exit assigning mode
             } else {
                 selectedEvents.push(eventId);
                 info.event.setProp('classNames', ['selected']);
-                assigningInterpreter = null;
-                updateTickBoxes();
+                updateTickBoxes(); // Keep tickboxes updated, but don't exit assigning mode
             }
 
             renderSelectedEvents();
@@ -228,6 +227,8 @@ document.addEventListener('DOMContentLoaded', function () {
             if (assigningInterpreter) {
                 const assignments = interpreterAssignments[assigningInterpreter.id] || {};
                 tickbox.checked = !!assignments[dateStr];
+            } else {
+                tickbox.checked = false; // Untick when not in assigning mode
             }
         });
         calendar.render();
@@ -662,6 +663,33 @@ document.addEventListener('DOMContentLoaded', function () {
             elements.interpreterList.appendChild(row);
         });
     }
+
+    elements.exitAllBtn.addEventListener('click', () => {
+        if (selectedEvents.length > 0) {
+            // Create a copy of selectedEvents to iterate over
+            const eventsToUnselect = [...selectedEvents];
+            // Clear selectedEvents immediately
+            selectedEvents = [];
+            // Update each event's classNames and re-render in the calendar
+            eventsToUnselect.forEach(eventId => {
+                const event = events.find(e => e.id === eventId);
+                if (event) {
+                    // Reset classNames to original state
+                    event.classNames = getEventClassNames(event);
+                    const calEvent = calendar.getEventById(eventId);
+                    if (calEvent) {
+                        calEvent.remove();
+                        calendar.addEvent(event);
+                    }
+                }
+            });
+            assigningInterpreter = null;
+            updateTickBoxes();
+            renderSelectedEvents();
+            renderInterpreters();
+            calendar.render();
+        }
+    });
 
     async function loadAllDataAndRender() {
         events = await loadEventsFromFirestore();
