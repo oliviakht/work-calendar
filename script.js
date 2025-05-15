@@ -427,6 +427,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     await saveEventsToFirestore(events);
                     renderSelectedEvents();
                     renderInterpreters();
+                    refreshCalendarHighlights();
                     calendar.render();
                 });
                 assignedDiv.appendChild(chip);
@@ -456,6 +457,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             await saveEventsToFirestore(events);
                             renderSelectedEvents();
                             renderInterpreters();
+                            refreshCalendarHighlights();
                             calendar.render();
                         }
                     });
@@ -502,6 +504,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 await saveEventsToFirestore(events);
                                 renderSelectedEvents();
                                 renderInterpreters();
+                                refreshCalendarHighlights();
                                 calendar.render();
                                 input.value = '';
                             }
@@ -513,6 +516,42 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             elements.eventList.appendChild(row);
+        });
+    }
+
+    // Function to refresh calendar highlights
+    function refreshCalendarHighlights() {
+        if (!assigningInterpreter) return;
+
+        document.querySelectorAll('.fc-daygrid-day').forEach(cell => {
+            const dateStr = cell.getAttribute('data-date');
+            if (!dateStr) return;
+
+            const assignments = interpreterAssignments[assigningInterpreter.id] || {};
+            if (assignments[dateStr]) {
+                cell.classList.remove('interpreter-assigned', 'interpreter-overlap');
+                cell.classList.add('interpreter-working');
+            } else {
+                let eventCount = 0;
+                events.forEach(event => {
+                    const startStr = event.start.split('T')[0];
+                    const endStr = event.end ? event.end.split('T')[0] : startStr;
+                    if ((event.interpreterIds || []).includes(assigningInterpreter.id)) {
+                        const start = new Date(startStr);
+                        const end = new Date(endStr);
+                        const current = new Date(dateStr);
+                        if (current >= start && current < end) {
+                            eventCount++;
+                        }
+                    }
+                });
+                cell.classList.remove('interpreter-assigned', 'interpreter-overlap', 'interpreter-working');
+                if (eventCount >= 2) {
+                    cell.classList.add('interpreter-overlap');
+                } else if (eventCount === 1) {
+                    cell.classList.add('interpreter-assigned');
+                }
+            }
         });
     }
 
@@ -685,6 +724,10 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             assigningInterpreter = null;
             updateTickBoxes();
+            // Clear all highlights when exiting assigning mode
+            document.querySelectorAll('.fc-daygrid-day').forEach(cell => {
+                cell.classList.remove('interpreter-assigned', 'interpreter-overlap', 'interpreter-working');
+            });
             renderSelectedEvents();
             renderInterpreters();
             calendar.render();
