@@ -1,3 +1,12 @@
+/* Example @font-face for Rexton (uncomment and adjust path if you have the font file) */
+/* @font-face {
+    font-family: 'Rexton';
+    src: url('path-to-rexton-font.woff2') format('woff2'),
+         url('path-to-rexton-font.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+} */
+
 #calendar {
     background-color: white;
     padding: 20px;
@@ -9,6 +18,7 @@
     max-height: 80vh;
     display: flex;
     flex-direction: column;
+    margin-top: 3px; /* Set to exactly 3px to minimize gap */
 }
 
 .fc-daygrid {
@@ -193,6 +203,7 @@
     padding: 8px;
     border: 1px solid #ccc;
     text-align: center;
+    color: #000435;
 }
 
 #interpreterTable th {
@@ -217,6 +228,7 @@
 #interpreterTable tbody tr {
     cursor: pointer;
     background-color: #FFFFFF;
+    color: #000435;
 }
 
 #interpreterTable tbody tr:hover {
@@ -225,6 +237,7 @@
 
 #interpreterTable tbody tr.interpreter-assigned {
     background-color: #FFDAB9;
+    color: #000435;
 }
 
 .assign-btn, .edit-int, .delete-int, .assign-mode-btn, .drag-handle {
@@ -233,6 +246,7 @@
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.9em;
+    color: #000435;
 }
 
 .assign-btn {
@@ -290,6 +304,7 @@
     border-radius: 12px;
     display: inline-block;
     cursor: pointer;
+    color: #000435;
 }
 
 .assigned-chip:hover {
@@ -303,10 +318,21 @@
     margin-bottom: 8px;
     text-align: center;
     font-weight: bold;
+    color: #000435;
 }
 
 #monthSelector {
     text-align: center;
+    color: #000435;
+}
+
+h2 {
+    font-family: 'Rexton', Georgia, 'Times New Roman', serif;
+    font-size: 1.8rem; /* 90% of original 2xl (24px) */
+    font-weight: bold;
+    margin-bottom: 1rem;
+    text-align: center;
+    color: #000435;
 }
 
 #selectedEvents {

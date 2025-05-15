@@ -243,24 +243,28 @@ document.addEventListener('DOMContentLoaded', function () {
         const month = parseInt(this.value);
         const currentDate = calendar.getDate();
         calendar.gotoDate(new Date(currentDate.getFullYear(), month, 1));
+        refreshCalendarHighlights();
         calendar.render();
     });
 
     elements.prevMonth.addEventListener('click', function () {
         calendar.prev();
         updateMonthSelector();
+        refreshCalendarHighlights();
         calendar.render();
     });
 
     elements.nextMonth.addEventListener('click', function () {
         calendar.next();
         updateMonthSelector();
+        refreshCalendarHighlights();
         calendar.render();
     });
 
     elements.todayBtn.addEventListener('click', function () {
         calendar.today();
         updateMonthSelector();
+        refreshCalendarHighlights();
         calendar.render();
     });
 

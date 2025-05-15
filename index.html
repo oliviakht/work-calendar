@@ -58,14 +58,16 @@
             <!-- Interpreters (Right, 40%) -->
             <div class="flex-[0.4]">
                 <h2 class="text-2xl font-bold mb-4 text-center">Interpreters</h2>
-                <div class="flex flex-wrap gap-3 mb-6">
+                <div class="flex flex-wrap gap-3 mb-3">
                     <input id="intName" type="text" placeholder="Name" class="p-2 border rounded flex-1 min-w-[150px]">
                     <input id="intFullName" type="text" placeholder="Full Name" class="p-2 border rounded flex-1 min-w-[80px]">
+                </div>
+                <div class="flex flex-wrap gap-3 mb-3">
+                    <input id="intIdName" type="text" placeholder="ID Name" class="p-2 border rounded w-[330px]">
                     <select id="intGender" class="p-2 border rounded w-[60px]">
                         <option value="M">M</option>
                         <option value="F" selected>F</option>
                     </select>
-                    <input id="intIdName" type="text" placeholder="ID Name" class="p-2 border rounded flex-1 min-w-[150px]">
                     <button id="intEnterBtn" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Enter</button>
                 </div>
                 <div id="interpreterTable" class="overflow-x-auto">
