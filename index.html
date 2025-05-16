@@ -27,10 +27,10 @@
     </div>
 
     <!-- Middle: Calendar (60%) and Interpreters (40%) in one background -->
-    <div class="bg-white p-4 rounded-lg shadow mb-6">
+    <div class="bg-white p-4 rounded-lg shadow mb-6 middle-section">
         <div class="flex flex-col lg:flex-row gap-6">
             <!-- Calendar (Left, 60%) -->
-            <div class="flex-[0.6]">
+            <div class="flex-[0.6] calendar-section">
                 <h2 class="text-2xl font-bold mb-4 text-center">Calendar</h2>
                 <div class="flex justify-center gap-2 items-center">
                     <button id="prevMonth" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"><</button>
@@ -56,7 +56,7 @@
             </div>
 
             <!-- Interpreters (Right, 40%) -->
-            <div class="flex-[0.4]">
+            <div class="flex-[0.4] interpreter-section">
                 <h2 class="text-2xl font-bold mb-4 text-center">Interpreters</h2>
                 <div class="flex flex-wrap gap-3 mb-3">
                     <input id="intName" type="text" placeholder="Name" class="p-2 border rounded flex-1 min-w-[150px]">
@@ -88,7 +88,7 @@
     </div>
 
     <!-- Selected Events Area (Bottom) -->
-    <div class="bg-white p-4 rounded-lg shadow">
+    <div class="bg-white p-4 rounded-lg shadow sea-section">
         <h2 class="text-2xl font-bold mb-4 text-center flex justify-center items-center gap-2">Selected Events <button id="exitAllBtn" class="bg-[#FF775E] text-white px-2 py-0.5 rounded hover:bg-[#E66B55] text-base font-normal">Exit All</button></h2>
         <div id="selectedEvents" class="space-y-4">
             <div id="eventList"></div>

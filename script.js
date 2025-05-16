@@ -81,6 +81,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- FullCalendar ---
     const calendar = new FullCalendar.Calendar(elements.calendar, {
         initialView: 'dayGridMonth',
+        firstDay: 1,
         headerToolbar: { left: '', center: '', right: '' }, // Disable default header
         events: [],
         eventClick: function (info) {
