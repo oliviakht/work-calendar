@@ -339,28 +339,6 @@ h2 {
     margin-bottom: 100px;
 }
 
-/* Desktop Layout: Calendar and Interpreters Side by Side */
-@media (min-width: 769px) {
-    .middle-section-wrapper {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-    .calendar-section {
-        width: 60%; /* 60% width for Calendar */
-    }
-    .interpreter-section {
-        width: 40%; /* 40% width for Interpreters */
-    }
-    .calendar-section, .interpreter-section {
-        display: inline-block;
-        vertical-align: top;
-    }
-    .sea-section {
-        width: 100%; /* SEA takes full width below */
-    }
-}
-
 @media (max-width: 768px) {
     /* 1. Widen the white space by 50%, keeping a minimal gap */
     .container {
@@ -540,30 +518,17 @@ h2 {
     .event-row input[data-field="interpreters"] {
         max-width: 150px !important;
         min-width: 130px !important;
+
     }
     .event-row input[data-field="interpretersLeft"] {
         max-width: 150px !important;
         min-width: 130px !important; /* 4:4:2 ratio for interpretersLeft */
+
     }
     .event-row .delete-icon {
         font-size: 1.3em !important;
         max-width: 40px !important;
         min-width: 40px !important;
-        height: 40px !important; /* 4:4:2 ratio for delete icon */
-    }
-
-    /* Reordering for Mobile */
-    .middle-section-wrapper {
-        display: flex !important;
-        flex-direction: column !important;
-    }
-    .calendar-section {
-        order: 1 !important; /* First */
-    }
-    .sea-section {
-        order: 2 !important; /* Second */
-    }
-    .interpreter-section {
-        order: 3 !important; /* Third */
+        height: 40px !important;/* 4:4:2 ratio for delete icon */
     }
 }
