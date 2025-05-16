@@ -367,22 +367,22 @@ h2 {
     }
     #startDate {
         flex: 1 !important; /* Evenly distributed */
-        min-width: 140px !important;
+        min-width: 125px !important;
         order: 3;
     }
     #endDate {
         flex: 1 !important; /* Evenly distributed */
-        min-width: 140px !important;
+        min-width: 125px !important;
         order: 4;
     }
     #interpreters {
         flex: 1 !important; /* Evenly distributed */
-        min-width: 140px !important;
+        min-width: 125px !important;
         order: 5;
     }
     #enterBtn {
         flex: 1 !important; /* Evenly distributed */
-        min-width: 70px !important;
+        min-width: 125px !important;
         order: 6;
     }
 
@@ -403,6 +403,9 @@ h2 {
     /* 3. Calendar */
     #calendar {
         padding: 10px !important; /* Reduced from 20px to minimize gaps */
+    }
+    #monthSelector {
+        text-align: center !important;
     }
     .fc-daygrid-day {
         padding: 2px !important; /* Reduced to minimize gaps */
