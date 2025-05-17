@@ -43,6 +43,17 @@ document.addEventListener('DOMContentLoaded', function () {
         return doc.exists ? doc.data() : {};
     }
 
+    // --- Logging Function ---
+    async function logAction(action, details) {
+        const timestamp = new Date().toISOString();
+        await db.collection('logs').add({
+            timestamp: timestamp,
+            action: action,
+            details: details,
+            user: 'Admin' // Placeholder; can be replaced with actual user data if available
+        });
+    }
+
     // --- DOM Elements ---
     const elements = {
         calendar: document.getElementById('calendar'),
@@ -82,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const calendar = new FullCalendar.Calendar(elements.calendar, {
         initialView: 'dayGridMonth',
         firstDay: 1,
-        headerToolbar: { left: '', center: '', right: '' }, // Disable default header
+        headerToolbar: { left: '', center: '', right: '' },
         events: [],
         eventClick: function (info) {
             const eventId = info.event.id;
@@ -97,11 +108,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     calEvent.remove();
                     calendar.addEvent(event);
                 }
-                updateTickBoxes(); // Keep tickboxes updated, but don't exit assigning mode
+                updateTickBoxes();
             } else {
                 selectedEvents.push(eventId);
                 info.event.setProp('classNames', ['selected']);
-                updateTickBoxes(); // Keep tickboxes updated, but don't exit assigning mode
+                updateTickBoxes();
             }
 
             renderSelectedEvents();
@@ -114,7 +125,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 return classes;
             }
 
-            // Safety check: Ensure info.el exists before accessing getAttribute
             if (!info.el) {
                 return classes;
             }
@@ -189,6 +199,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 interpreterAssignments[interpreterId] = {};
             }
             interpreterAssignments[interpreterId][dateStr] = tickbox.checked;
+
+            // Log the working day update
+            const action = tickbox.checked ? 'Working Day Added' : 'Working Day Removed';
+            const details = `Interpreter: ${assigningInterpreter.name}, Date: ${dateStr}`;
+            logAction(action, details);
+
             saveAssignmentsToFirestore(interpreterId, interpreterAssignments[interpreterId]).then(() => {
                 document.querySelectorAll('.fc-daygrid-day').forEach(cell => {
                     const cellDateStr = cell.getAttribute('data-date');
@@ -229,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const assignments = interpreterAssignments[assigningInterpreter.id] || {};
                 tickbox.checked = !!assignments[dateStr];
             } else {
-                tickbox.checked = false; // Untick when not in assigning mode
+                tickbox.checked = false;
             }
         });
         calendar.render();
@@ -293,6 +309,9 @@ document.addEventListener('DOMContentLoaded', function () {
         events.push(event);
         calendar.addEvent(event);
 
+        // Log the event addition
+        logAction('Event Added', `Title: ${event.title}, Start: ${event.start}, End: ${event.end}, Location: ${event.location}`);
+
         Object.values(elements.inputs).forEach(input => input.value = '');
         elements.inputs.location.value = 'Hong Kong';
         elements.inputs.interpreters.value = '';
@@ -355,11 +374,22 @@ document.addEventListener('DOMContentLoaded', function () {
             const inputs = row.querySelectorAll('input:not([data-field="interpreters"],[data-field="interpretersLeft"]), select');
             inputs.forEach(input => {
                 input.addEventListener('input', async () => {
+                    const oldEvent = { ...event };
                     event.title = row.querySelector('input[data-field="title"]').value || 'Untitled';
                     event.location = row.querySelector('select[data-field="location"]').value;
                     event.start = row.querySelector('input[data-field="start"]').value;
                     const endInput = row.querySelector('input[data-field="end"]').value;
                     event.end = endInput ? new Date(new Date(endInput).setDate(new Date(endInput).getDate() + 1)).toISOString().split('T')[0] : event.start;
+
+                    // Log the event update
+                    const changes = [];
+                    if (oldEvent.title !== event.title) changes.push(`Title: ${oldEvent.title} → ${event.title}`);
+                    if (oldEvent.location !== event.location) changes.push(`Location: ${oldEvent.location} → ${event.location}`);
+                    if (oldEvent.start !== event.start) changes.push(`Start: ${oldEvent.start} → ${event.start}`);
+                    if (oldEvent.end !== event.end) changes.push(`End: ${oldEvent.end} → ${event.end}`);
+                    if (changes.length > 0) {
+                        logAction('Event Updated', `ID: ${event.id}, Changes: ${changes.join(', ')}`);
+                    }
 
                     const calEvent = calendar.getEventById(eventId);
                     if (calEvent) {
@@ -376,10 +406,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const interpretersInput = row.querySelector('input[data-field="interpreters"]');
             interpretersInput.addEventListener('input', async () => {
+                const oldInterpreters = event.interpreters;
                 event.interpreters = interpretersInput.value || '0';
                 const interpretersNeeded = parseInt(event.interpreters) || 0;
                 const assignedCount = (event.interpreterIds || []).length;
                 row.querySelector('input[data-field="interpretersLeft"]').value = interpretersNeeded - assignedCount;
+
+                // Log the interpreters needed update
+                if (oldInterpreters !== event.interpreters) {
+                    logAction('Event Updated', `ID: ${event.id}, Interpreters Needed: ${oldInterpreters} → ${event.interpreters}`);
+                }
 
                 const calEvent = calendar.getEventById(eventId);
                 if (calEvent) {
@@ -395,6 +431,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const deleteButton = row.querySelector('.delete-icon');
             deleteButton.addEventListener('click', async () => {
+                // Log the event deletion
+                logAction('Event Deleted', `ID: ${event.id}, Title: ${event.title}`);
+
                 events = events.filter(e => e.id !== eventId);
                 const calEvent = calendar.getEventById(eventId);
                 if (calEvent) calEvent.remove();
@@ -421,6 +460,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     const interpretersNeeded = parseInt(event.interpreters) || 0;
                     const assignedCount = (event.interpreterIds || []).length;
                     row.querySelector('input[data-field="interpretersLeft"]').value = interpretersNeeded - assignedCount;
+
+                    // Log the interpreter removal
+                    logAction('Interpreter Removed', `Event ID: ${event.id}, Interpreter: ${interpreter.name}`);
 
                     const calEvent = calendar.getEventById(eventId);
                     if (calEvent) {
@@ -451,6 +493,9 @@ document.addEventListener('DOMContentLoaded', function () {
                             const interpretersNeeded = parseInt(event.interpreters) || 0;
                             const assignedCount = (event.interpreterIds || []).length;
                             row.querySelector('input[data-field="interpretersLeft"]').value = interpretersNeeded - assignedCount;
+
+                            // Log the interpreter assignment
+                            logAction('Interpreter Assigned', `Event ID: ${event.id}, Interpreter: ${interpreter.name}`);
 
                             const calEvent = calendar.getEventById(eventId);
                             if (calEvent) {
@@ -499,6 +544,10 @@ document.addEventListener('DOMContentLoaded', function () {
                                 const assignedCount = (event.interpreterIds || []).length;
                                 row.querySelector('input[data-field="interpretersLeft"]').value = interpretersNeeded - assignedCount;
 
+                                // Log the interpreter assignment
+                                const interpreter = interpreters.find(i => i.id === interpreterId);
+                                logAction('Interpreter Assigned', `Event ID: ${event.id}, Interpreter: ${interpreter.name}`);
+
                                 const calEvent = calendar.getEventById(eventId);
                                 if (calEvent) {
                                     calEvent.remove();
@@ -524,7 +573,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Function to refresh calendar highlights
     function refreshCalendarHighlights() {
         if (!assigningInterpreter) return;
 
@@ -570,14 +618,17 @@ document.addEventListener('DOMContentLoaded', function () {
         };
 
         const existingIndex = interpreters.findIndex(i => i.id === interpreter.id);
-        if (existingIndex !== -1) {
+        const isUpdate = existingIndex !== -1;
+        if (isUpdate) {
             interpreters[existingIndex] = interpreter;
+            logAction('Interpreter Updated', `Name: ${interpreter.name}`);
         } else {
             interpreters.push(interpreter);
+            logAction('Interpreter Added', `Name: ${interpreter.name}`);
         }
 
         Object.values(elements.intInputs).forEach(input => input.value = '');
-        elements.intInputs.gender.value = 'F'; // Reset to default
+        elements.intInputs.gender.value = 'F';
         editingInterpreterId = null;
         assigningInterpreter = null;
         updateTickBoxes();
@@ -592,7 +643,7 @@ document.addEventListener('DOMContentLoaded', function () {
         interpreters.forEach((interpreter, index) => {
             const row = document.createElement('tr');
             row.dataset.id = interpreter.id;
-            row.draggable = true; // Make the row draggable
+            row.draggable = true;
             row.className = assigningInterpreter && assigningInterpreter.id === interpreter.id ? 'interpreter-assigned' : '';
             row.innerHTML = `
                 <td>
@@ -606,7 +657,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td><button class="delete-int" title="Delete">🗑️</button></td>
             `;
 
-            // Drag-and-drop event listeners
             row.addEventListener('dragstart', (e) => {
                 e.dataTransfer.setData('text/plain', interpreter.id);
                 row.classList.add('dragging');
@@ -629,6 +679,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (draggedId !== interpreter.id) {
                     interpreters = interpreters.filter(i => i.id !== draggedId);
                     interpreters.splice(targetIndex, 0, draggedInterpreter);
+
+                    // Log the reorder action
+                    logAction('Interpreter Reordered', `Name: ${draggedInterpreter.name}, New Position: ${targetIndex}`);
+
                     await saveInterpretersToFirestore(interpreters);
                     renderInterpreters();
                 }
@@ -687,6 +741,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const deleteBtn = row.querySelector('.delete-int');
             deleteBtn.addEventListener('click', async () => {
+                // Log the interpreter deletion
+                logAction('Interpreter Deleted', `Name: ${interpreter.name}`);
+
                 interpreters = interpreters.filter(i => i.id !== interpreter.id);
                 events.forEach(ev => {
                     if (ev.interpreterIds && ev.interpreterIds.includes(interpreter.id)) {
@@ -710,15 +767,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     elements.exitAllBtn.addEventListener('click', () => {
         if (selectedEvents.length > 0) {
-            // Create a copy of selectedEvents to iterate over
             const eventsToUnselect = [...selectedEvents];
-            // Clear selectedEvents immediately
             selectedEvents = [];
-            // Update each event's classNames and re-render in the calendar
             eventsToUnselect.forEach(eventId => {
                 const event = events.find(e => e.id === eventId);
                 if (event) {
-                    // Reset classNames to original state
                     event.classNames = getEventClassNames(event);
                     const calEvent = calendar.getEventById(eventId);
                     if (calEvent) {
@@ -729,7 +782,6 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             assigningInterpreter = null;
             updateTickBoxes();
-            // Clear all highlights when exiting assigning mode
             document.querySelectorAll('.fc-daygrid-day').forEach(cell => {
                 cell.classList.remove('interpreter-assigned', 'interpreter-overlap', 'interpreter-working');
             });

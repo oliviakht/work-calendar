@@ -1,0 +1,59 @@
+/* Logs Table */
+#logTable {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-height: 600px; /* Limit height to prevent excessive scrolling */
+    overflow-y: auto;
+}
+
+#logTable table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#logTable th,
+#logTable td {
+    padding: 8px;
+    border: 1px solid #ccc;
+    text-align: left;
+    color: #000435;
+}
+
+#logTable th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+#logTable tbody tr {
+    background-color: #FFFFFF;
+}
+
+#logTable tbody tr:hover {
+    background-color: #f0f0f0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #logTable {
+        max-height: 400px !important; /* Reduced height for smaller screens */
+    }
+
+    #logTable th,
+    #logTable td {
+        padding: 4px !important; /* Reduced padding */
+        font-size: 0.9em !important; /* Smaller font for better fit */
+    }
+}
+
+h2 {
+    font-family: 'Rexton', Georgia, 'Times New Roman', serif;
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    text-align: center;
+    color: #000435;
+}

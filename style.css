@@ -336,7 +336,7 @@ h2 {
 }
 
 #selectedEvents {
-    margin-bottom: 100px;
+    margin-bottom: 20px; /* Reduced from 100px since buttons are now at the bottom */
 }
 
 @media (max-width: 768px) {
@@ -346,7 +346,6 @@ h2 {
         margin-left: auto !important;
         margin-right: auto !important;
         width: 100% !important;
-        box-width: none !important;
         box-sizing: border-box !important;
     }
 
@@ -494,7 +493,7 @@ h2 {
 
     /* 5. Selected Events Area */
     #selectedEvents {
-        margin-bottom: 50px !important; /* Reduced from 100px */
+        margin-bottom: 10px !important; /* Reduced further since buttons are at the bottom */
         --space-y: 4px !important; /* Reduced from space-y-4 (16px) to 8px */
     }
     #selectedEvents > * + * {
@@ -524,17 +523,15 @@ h2 {
     .event-row input[data-field="interpreters"] {
         max-width: 150px !important;
         min-width: 130px !important;
-
     }
     .event-row input[data-field="interpretersLeft"] {
         max-width: 150px !important;
         min-width: 130px !important; /* 4:4:2 ratio for interpretersLeft */
-
     }
     .event-row .delete-icon {
         font-size: 1.3em !important;
         max-width: 40px !important;
         min-width: 40px !important;
-        height: 40px !important;/* 4:4:2 ratio for delete icon */
+        height: 40px !important; /* 4:4:2 ratio for delete icon */
     }
 }

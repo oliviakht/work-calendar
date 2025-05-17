@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Logs</title>
+    <link rel="stylesheet" href="logstyle.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+<div class="container mx-auto p-6">
+    <!-- Header -->
+    <div class="bg-white p-4 rounded-lg shadow mb-6">
+        <h2 class="text-2xl font-bold mb-4 text-center">Activity Logs</h2>
+        <div class="flex justify-center gap-4">
+            <button id="clearAllBtn" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">CLEAR ALL</button>
+            <a href="index.html" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Back to Calendar</a>
+        </div>
+    </div>
+
+    <!-- Logs Table -->
+    <div id="logTable" class="bg-white p-4 rounded-lg shadow">
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse">
+                <thead>
+                <tr class="bg-gray-200">
+                    <th class="p-2 border">Timestamp</th>
+                    <th class="p-2 border">Action</th>
+                    <th class="p-2 border">Details</th>
+                    <th class="p-2 border">User</th>
+                </tr>
+                </thead>
+                <tbody id="logList"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<!-- Load Firebase SDK v8 -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="logscript.js"></script>
+</body>
+</html>

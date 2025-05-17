@@ -9,7 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100">
-<div class="container mx-auto p-6">
+<div class="container mx-auto p-6 flex flex-col min-h-screen">
     <!-- Event Entry (Top) -->
     <div class="bg-white p-4 rounded-lg shadow mb-6">
         <h2 class="text-2xl font-bold mb-4 text-center">Add Event</h2>
@@ -88,11 +88,17 @@
     </div>
 
     <!-- Selected Events Area (Bottom) -->
-    <div class="bg-white p-4 rounded-lg shadow sea-section">
+    <div class="bg-white p-4 rounded-lg shadow sea-section flex-1">
         <h2 class="text-2xl font-bold mb-4 text-center flex justify-center items-center gap-2">Selected Events <button id="exitAllBtn" class="bg-[#FF775E] text-white px-2 py-0.5 rounded hover:bg-[#E66B55] text-base font-normal">Exit All</button></h2>
         <div id="selectedEvents" class="space-y-4">
             <div id="eventList"></div>
         </div>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="mt-6 flex justify-center gap-4">
+        <a href="log.html" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">LOG</a>
+        <a href="roster.html" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">ROSTER</a>
     </div>
 </div>
 <!-- Load Firebase SDK v8 before script.js -->
