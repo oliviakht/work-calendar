@@ -38,6 +38,14 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+    .container {
+        padding: 15px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        width: 100% !important;
+        box-sizing: border-box;
+        }
+
     #logTable {
         max-height: 400px !important; /* Reduced height for smaller screens */
     }
