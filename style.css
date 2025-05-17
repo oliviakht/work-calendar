@@ -343,8 +343,11 @@ h2 {
     /* 1. Widen the white space by 50%, keeping a minimal gap */
     .container {
         padding: 15px !important;
-        margin-left: 4px !important;
-        margin-right: 4px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        width: 100% !important;
+        box-width: none !important;
+        box-sizing: border-box !important;
     }
 
     /* 2. "Add Event" Space */
