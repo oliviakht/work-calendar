@@ -1,0 +1,31 @@
+.selected {
+    background-color: #e6f3ff; /* Light blue for selected rows */
+}
+.dragging {
+    opacity: 0.5;
+}
+.position-dropdown {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    width: 120px;
+}
+.bg-gray-200 {
+    background-color: #d3d3d3; /* Header row color */
+}
+.bg-gray-300 {
+    background-color: #e6e6e6; /* Lighter gray for merged group cell */
+}
+.bg-yellow-500 {
+    background-color: #f4d03f; /* Finish Grouping button */
+}
+.bg-yellow-600 {
+    background-color: #d4b02f; /* Hover state for Finish Grouping */
+}
+.group-header input {
+    transform-origin: center;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    text-align: center;
+}
