@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let isGroupingMode = false;
     let hasGroupColumn = false;
     let isFinishGroupingMode = false;
-    let groups = []; // Array to store group data: { startRow, endRow, name }
+    let groups = []; // Array to store group data: { startId, endId, name }
 
     // --- Load Data ---
     async function loadData() {
@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- Populate Event Dropdown ---
     function populateEventDropdown() {
-        const today = new Date('2025-05-18T02:48:00-06:00'); // Current date and time in CST
+        const today = new Date('2025-05-18T13:58:00-06:00'); // Updated to current time
         eventDropdown.innerHTML = '<option value="">Select an Event</option>';
         events.forEach(event => {
             const endDate = new Date(event.end);
@@ -63,15 +63,15 @@ document.addEventListener('DOMContentLoaded', function () {
             const groupHeader = document.createElement('th');
             groupHeader.className = 'p-2 border';
             tableHeadRow.insertBefore(groupHeader, tableHeadRow.firstChild);
-
-            const rows = rosterList.querySelectorAll('tr');
-            rows.forEach(row => {
-                const td = document.createElement('td');
-                td.className = 'p-2 border';
-                row.insertBefore(td, row.firstChild);
-            });
-
             hasGroupColumn = true;
+
+            // Add an empty cell in the group column for all rows
+            const rows = Array.from(rosterList.querySelectorAll('tr:not(.header-row)'));
+            rows.forEach(row => {
+                const emptyCell = document.createElement('td');
+                emptyCell.className = 'p-2 border group-cell';
+                row.insertBefore(emptyCell, row.firstChild);
+            });
         }
     }
 
@@ -104,8 +104,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Populate tbody with interpreters
         const assignedInterpreterIds = selectedEvent.interpreterIds || [];
-        let rowNum = 1;
-        const rows = assignedInterpreterIds.map(intId => {
+        const rows = assignedInterpreterIds.map((intId, index) => {
             const interpreter = interpreters[intId];
             if (!interpreter) return null;
 
@@ -113,21 +112,25 @@ document.addEventListener('DOMContentLoaded', function () {
             row.dataset.id = intId;
             row.draggable = true;
             row.classList.toggle('selected', selectedInterpreterIds.has(intId));
-            row.innerHTML = `
-                ${hasGroupColumn ? '<td class="p-2 border"></td>' : ''}
-                <td class="p-2 border">${rowNum++}</td>
-                <td class="p-2 border">${interpreter.fullName}</td>
-                <td class="p-2 border">${interpreter.idName}</td>
-                <td class="p-2 border">${interpreter.gender || 'F'}</td>
-                <td class="p-2 border relative">
+
+            // Build row with consistent column structure
+            let rowHTML = hasGroupColumn ? '<td class="p-2 border group-cell"></td>' : '';
+            rowHTML += `
+                <td class="p-2 border order-cell"></td>
+                <td class="p-2 border name-cell">${interpreter.fullName}</td>
+                <td class="p-2 border idname-cell">${interpreter.idName || 'None'}</td>
+                <td class="p-2 border gender-cell">${interpreter.gender || 'F'}</td>
+                <td class="p-2 border position-cell relative">
                     <span id="positionDisplay-${intId}" class="position-display cursor-pointer">${positions.includes('Support') ? 'Support' : positions[0]}</span>
                     <div id="positionDropdown-${intId}" class="position-dropdown hidden absolute bg-white z-10"></div>
                 </td>
             `;
 
+            row.innerHTML = rowHTML;
+
             dateColumns.forEach(date => {
                 const td = document.createElement('td');
-                td.className = 'p-2 border text-center';
+                td.className = 'p-2 border text-center date-cell';
                 const assignments = interpreterAssignments[intId] || {};
                 if (assignments[date]) {
                     td.textContent = 'o';
@@ -226,19 +229,37 @@ document.addEventListener('DOMContentLoaded', function () {
             return row;
         }).filter(row => row).forEach(row => rosterList.appendChild(row));
 
-        applyGroups();
+        if (hasGroupColumn) {
+            applyGroups();
+            updateRowNumbers();
+        } else {
+            updateRowNumbers();
+        }
     }
 
     // --- Update Row Numbers ---
     function updateRowNumbers() {
-        let rowNum = 1;
-        const rows = rosterList.querySelectorAll('tr:not(.header-row)');
-        rows.forEach(row => {
-            const numCell = row.querySelector('td:nth-child(' + (hasGroupColumn ? 2 : 1) + ')');
-            if (numCell) {
-                numCell.textContent = rowNum++;
-            }
-        });
+        const rows = Array.from(rosterList.querySelectorAll('tr:not(.header-row)'));
+        if (!rows.length) return;
+
+        if (!hasGroupColumn) {
+            // No group: number all rows in the first column
+            rows.forEach((row, index) => {
+                const orderCell = row.querySelector('.order-cell');
+                orderCell.textContent = (index + 1).toString();
+            });
+        } else {
+            // With group: number all rows in the second column
+            let orderIndex = 1;
+            rows.forEach((row, index) => {
+                const groupCell = row.querySelector('.group-cell');
+                if (groupCell && groupCell.rowSpan > 1) {
+                    orderIndex = 1;
+                }
+                const orderCell = row.querySelector('.order-cell');
+                orderCell.textContent = orderIndex++;
+            });
+        }
     }
 
     // --- Apply Existing Groups ---
@@ -248,24 +269,29 @@ document.addEventListener('DOMContentLoaded', function () {
             const startIndex = rows.findIndex(row => row.dataset.id === group.startId);
             const endIndex = rows.findIndex(row => row.dataset.id === group.endId);
             if (startIndex !== -1 && endIndex !== -1 && startIndex <= endIndex) {
-                // Check if the group already exists in the DOM to avoid duplication
                 const firstRow = rows[startIndex];
-                if (firstRow.firstChild.tagName === 'TD' && !firstRow.firstChild.querySelector('input')) {
-                    const groupCell = document.createElement('td');
-                    groupCell.className = 'p-2 border bg-gray-300 font-bold';
+                const groupCell = firstRow.querySelector('.group-cell');
+                if (groupCell && !groupCell.querySelector('input')) {
+                    groupCell.className = 'p-2 border bg-gray-300 font-bold group-cell';
                     groupCell.style.writingMode = 'vertical-rl';
                     groupCell.style.transform = 'rotate(180deg)';
                     groupCell.style.textAlign = 'center';
-                    groupCell.style.height = `${(endIndex - startIndex + 1) * 40}px`; // Approximate row height
+                    groupCell.style.height = `${(endIndex - startIndex + 1) * 40}px`;
                     groupCell.rowSpan = endIndex - startIndex + 1;
                     groupCell.innerHTML = `<input type="text" class="w-full h-full bg-gray-300 border-none focus:outline-none text-center font-bold" value="${group.name}" placeholder="Group Name">`;
 
-                    firstRow.insertBefore(groupCell, firstRow.firstChild);
+                    // Ensure subsequent rows maintain column alignment
                     for (let i = startIndex + 1; i <= endIndex; i++) {
-                        rows[i].removeChild(rows[i].firstChild);
+                        const currentRow = rows[i];
+                        const oldGroupCell = currentRow.querySelector('.group-cell');
+                        if (oldGroupCell) {
+                            currentRow.removeChild(oldGroupCell);
+                            const newGroupCell = document.createElement('td');
+                            newGroupCell.className = 'p-2 border group-cell';
+                            currentRow.insertBefore(newGroupCell, currentRow.firstChild);
+                        }
                     }
 
-                    // Add Enter key listener to save group name
                     const groupInput = groupCell.querySelector('input');
                     groupInput.addEventListener('keypress', (e) => {
                         if (e.key === 'Enter') {
@@ -304,7 +330,7 @@ document.addEventListener('DOMContentLoaded', function () {
         selectedInterpreterIds.clear();
         rosterList.querySelectorAll('tr').forEach(row => row.classList.remove('selected'));
         updateRowNumbers();
-        applyGroups(); // Ensure groups are reapplied
+        applyGroups();
     }
 
     // --- Group Button Functionality ---
@@ -315,6 +341,7 @@ document.addEventListener('DOMContentLoaded', function () {
             groupBtn.textContent = 'Group Selected';
             groupBtn.classList.add('bg-green-500', 'hover:bg-green-600');
             groupBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+            addGroupColumn();
             alert('Entered Grouping mode. Select consecutive rows and click "Group Selected".');
         } else if (isGroupingMode) {
             // Perform grouping
@@ -330,11 +357,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            // Add group column only if this is the first group
-            if (!hasGroupColumn) {
-                addGroupColumn();
-            }
-
             const rows = Array.from(rosterList.querySelectorAll('tr:not(.header-row)'));
             const selectedRows = Array.from(selectedInterpreterIds).map(id =>
                 rows.find(row => row.dataset.id === id)
@@ -344,7 +366,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const firstRowIndex = rows.indexOf(firstRow);
             const lastRow = selectedRows[selectedRows.length - 1];
 
-            // Add header row if not the first interpreter row and no header exists above
             if (firstRowIndex > 0 && (!firstRow.previousElementSibling || !firstRow.previousElementSibling.classList.contains('header-row'))) {
                 const headerRow = document.createElement('tr');
                 headerRow.className = 'header-row bg-gray-200';
@@ -352,22 +373,27 @@ document.addEventListener('DOMContentLoaded', function () {
                 rosterList.insertBefore(headerRow, firstRow);
             }
 
-            // Merge cells in the group column
-            const groupCell = document.createElement('td');
-            groupCell.className = 'p-2 border bg-gray-300 font-bold';
+            const groupCell = firstRow.querySelector('.group-cell');
+            groupCell.className = 'p-2 border bg-gray-300 font-bold group-cell';
             groupCell.style.writingMode = 'vertical-rl';
             groupCell.style.transform = 'rotate(180deg)';
             groupCell.style.textAlign = 'center';
-            groupCell.style.height = `${selectedRows.length * 40}px`; // Approximate row height
+            groupCell.style.height = `${selectedRows.length * 40}px`;
             groupCell.rowSpan = selectedRows.length;
             groupCell.innerHTML = `<input type="text" class="w-full h-full bg-gray-300 border-none focus:outline-none text-center font-bold" placeholder="Group Name">`;
 
-            firstRow.insertBefore(groupCell, firstRow.firstChild);
+            // Ensure all selected rows maintain column alignment
             for (let i = 1; i < selectedRows.length; i++) {
-                selectedRows[i].removeChild(selectedRows[i].firstChild);
+                const currentRow = selectedRows[i];
+                const oldGroupCell = currentRow.querySelector('.group-cell');
+                if (oldGroupCell) {
+                    currentRow.removeChild(oldGroupCell);
+                    const newGroupCell = document.createElement('td');
+                    newGroupCell.className = 'p-2 border group-cell';
+                    currentRow.insertBefore(newGroupCell, currentRow.firstChild);
+                }
             }
 
-            // Add Enter key listener to finish grouping
             const groupInput = groupCell.querySelector('input');
             groupInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
@@ -376,7 +402,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
 
-            // Move to Finish Grouping mode
             isGroupingMode = false;
             isFinishGroupingMode = true;
             groupBtn.textContent = 'Finish Grouping';
@@ -385,7 +410,6 @@ document.addEventListener('DOMContentLoaded', function () {
             selectedInterpreterIds.clear();
             rosterList.querySelectorAll('tr').forEach(row => row.classList.remove('selected'));
         } else if (isFinishGroupingMode) {
-            // Finish Grouping mode
             const currentInput = rosterList.querySelector('input:focus');
             if (currentInput) {
                 const groupCell = currentInput.closest('td');
