@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- DOM Elements ---
     const eventDropdown = document.getElementById('eventDropdown');
     const groupBtn = document.getElementById('groupBtn');
+    const clearSettingsBtn = document.getElementById('clearSettingsBtn');
     const rosterList = document.getElementById('rosterList');
     const tableHeadRow = document.querySelector('thead tr');
 
@@ -28,22 +29,68 @@ document.addEventListener('DOMContentLoaded', function () {
     let isGroupingMode = false;
     let hasGroupColumn = false;
     let isFinishGroupingMode = false;
-    let groups = []; // Array to store group data: { startId, endId, name }
+    let groups = [];
 
-    // --- Load Data ---
-    async function loadData() {
-        const eventDoc = await db.collection('calendar').doc('events').get();
+    // --- Firestore Save Functions ---
+    async function saveInterpretersToFirestore() {
+        await db.collection('calendar').doc('interpreters').set({ interpreters });
+    }
+
+    async function saveAssignmentsToFirestore(interpreterId, assignments) {
+        const allAssignments = { ...interpreterAssignments };
+        allAssignments[interpreterId] = assignments;
+        await db.collection('calendar').doc('assignments').set(allAssignments);
+    }
+
+    async function saveGroupsToFirestore() {
+        await db.collection('calendar').doc('groups').set({ groups });
+    }
+
+    async function saveEventsToFirestore(eventsArray) {
+        await db.collection('calendar').doc('events').set({ events: eventsArray });
+    }
+
+    // --- Load Data with Real-Time Listener ---
+    function setupRealTimeListeners() {
+        db.collection('calendar').doc('events').onSnapshot((doc) => {
+            events = doc.exists ? doc.data().events : [];
+            populateEventDropdown();
+        });
+
+        db.collection('calendar').doc('interpreters').onSnapshot((doc) => {
+            interpreters = doc.exists ? Object.fromEntries(doc.data().interpreters.map(i => [i.id, i])) : {};
+            updateRosterTable();
+        });
+
+        db.collection('calendar').doc('assignments').onSnapshot((doc) => {
+            interpreterAssignments = doc.exists ? doc.data() : {};
+            updateRosterTable();
+        });
+
+        db.collection('calendar').doc('groups').onSnapshot((doc) => {
+            groups = doc.exists ? doc.data().groups : [];
+            if (hasGroupColumn) applyGroups();
+        });
+    }
+
+    // --- Load Initial Data ---
+    async function loadInitialData() {
+        const [eventDoc, interpreterDoc, assignmentDoc, groupDoc] = await Promise.all([
+            db.collection('calendar').doc('events').get(),
+            db.collection('calendar').doc('interpreters').get(),
+            db.collection('calendar').doc('assignments').get(),
+            db.collection('calendar').doc('groups').get()
+        ]);
         events = eventDoc.exists ? eventDoc.data().events : [];
-        const interpreterDoc = await db.collection('calendar').doc('interpreters').get();
         interpreters = interpreterDoc.exists ? Object.fromEntries(interpreterDoc.data().interpreters.map(i => [i.id, i])) : {};
-        const assignmentDoc = await db.collection('calendar').doc('assignments').get();
         interpreterAssignments = assignmentDoc.exists ? assignmentDoc.data() : {};
+        groups = groupDoc.exists ? groupDoc.data().groups : [];
         populateEventDropdown();
     }
 
     // --- Populate Event Dropdown ---
     function populateEventDropdown() {
-        const today = new Date('2025-05-18T13:58:00-06:00'); // Updated to current time
+        const today = new Date('2025-05-18T14:45:00-06:00'); // Updated to current time
         eventDropdown.innerHTML = '<option value="">Select an Event</option>';
         events.forEach(event => {
             const endDate = new Date(event.end);
@@ -65,7 +112,6 @@ document.addEventListener('DOMContentLoaded', function () {
             tableHeadRow.insertBefore(groupHeader, tableHeadRow.firstChild);
             hasGroupColumn = true;
 
-            // Add an empty cell in the group column for all rows
             const rows = Array.from(rosterList.querySelectorAll('tr:not(.header-row)'));
             rows.forEach(row => {
                 const emptyCell = document.createElement('td');
@@ -91,7 +137,6 @@ document.addEventListener('DOMContentLoaded', function () {
             dateColumns.push(d.toISOString().split('T')[0]);
         }
 
-        // Update thead with date columns
         while (tableHeadRow.children.length > (hasGroupColumn ? 6 : 5)) {
             tableHeadRow.removeChild(tableHeadRow.lastChild);
         }
@@ -102,9 +147,8 @@ document.addEventListener('DOMContentLoaded', function () {
             tableHeadRow.appendChild(th);
         });
 
-        // Populate tbody with interpreters
         const assignedInterpreterIds = selectedEvent.interpreterIds || [];
-        const rows = assignedInterpreterIds.map((intId, index) => {
+        assignedInterpreterIds.map((intId, index) => {
             const interpreter = interpreters[intId];
             if (!interpreter) return null;
 
@@ -113,7 +157,6 @@ document.addEventListener('DOMContentLoaded', function () {
             row.draggable = true;
             row.classList.toggle('selected', selectedInterpreterIds.has(intId));
 
-            // Build row with consistent column structure
             let rowHTML = hasGroupColumn ? '<td class="p-2 border group-cell"></td>' : '';
             rowHTML += `
                 <td class="p-2 border order-cell"></td>
@@ -121,7 +164,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td class="p-2 border idname-cell">${interpreter.idName || 'None'}</td>
                 <td class="p-2 border gender-cell">${interpreter.gender || 'F'}</td>
                 <td class="p-2 border position-cell relative">
-                    <span id="positionDisplay-${intId}" class="position-display cursor-pointer">${positions.includes('Support') ? 'Support' : positions[0]}</span>
+                    <span id="positionDisplay-${intId}" class="position-display cursor-pointer">${interpreter.position || positions[0]}</span>
                     <div id="positionDropdown-${intId}" class="position-dropdown hidden absolute bg-white z-10"></div>
                 </td>
             `;
@@ -172,6 +215,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     rosterList.insertBefore(draggedRow, targetRow);
                     updateRowNumbers();
                     applyGroups();
+
+                    const newOrder = Array.from(rosterList.querySelectorAll('tr:not(.header-row)')).map(r => r.dataset.id);
+                    selectedEvent.interpreterIds = newOrder;
+                    saveEventsToFirestore(events);
                 }
             });
 
@@ -195,6 +242,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         positions.push(newPosition);
                         updatePositionDropdown(intId);
                         positionDropdown.classList.remove('hidden');
+                        savePositionsToFirestore();
                     }
                 });
 
@@ -207,6 +255,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         positionDisplay.textContent = positions[0];
                         updatePositionDropdown(intId);
                         positionDropdown.classList.remove('hidden');
+                        savePositionsToFirestore();
                     }
                 });
             });
@@ -221,8 +270,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (e.target.hasAttribute('data-position')) {
                     const newPosition = e.target.getAttribute('data-position');
                     positionDisplay.textContent = newPosition;
+                    interpreters[intId].position = newPosition;
                     positionDropdown.classList.add('hidden');
-                    console.log(`Updated ${intId} position to ${newPosition}`);
+                    saveInterpretersToFirestore();
                 }
             });
 
@@ -243,13 +293,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!rows.length) return;
 
         if (!hasGroupColumn) {
-            // No group: number all rows in the first column
             rows.forEach((row, index) => {
                 const orderCell = row.querySelector('.order-cell');
                 orderCell.textContent = (index + 1).toString();
             });
         } else {
-            // With group: number all rows in the second column
             let orderIndex = 1;
             rows.forEach((row, index) => {
                 const groupCell = row.querySelector('.group-cell');
@@ -280,7 +328,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     groupCell.rowSpan = endIndex - startIndex + 1;
                     groupCell.innerHTML = `<input type="text" class="w-full h-full bg-gray-300 border-none focus:outline-none text-center font-bold" value="${group.name}" placeholder="Group Name">`;
 
-                    // Ensure subsequent rows maintain column alignment
                     for (let i = startIndex + 1; i <= endIndex; i++) {
                         const currentRow = rows[i];
                         const oldGroupCell = currentRow.querySelector('.group-cell');
@@ -296,6 +343,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     groupInput.addEventListener('keypress', (e) => {
                         if (e.key === 'Enter') {
                             group.name = groupInput.value || `Group ${groups.length + 1}`;
+                            saveGroupsToFirestore();
                             finishGrouping();
                         }
                     });
@@ -333,10 +381,26 @@ document.addEventListener('DOMContentLoaded', function () {
         applyGroups();
     }
 
+    // --- Clear Settings ---
+    function clearSettings() {
+        groups = [];
+        hasGroupColumn = false;
+        saveGroupsToFirestore();
+        updateRosterTable();
+        while (tableHeadRow.firstChild && tableHeadRow.firstChild.className === 'p-2 border') {
+            tableHeadRow.removeChild(tableHeadRow.firstChild);
+        }
+        const rows = Array.from(rosterList.querySelectorAll('tr:not(.header-row)'));
+        rows.forEach(row => {
+            if (row.querySelector('.group-cell')) {
+                row.removeChild(row.querySelector('.group-cell'));
+            }
+        });
+    }
+
     // --- Group Button Functionality ---
     groupBtn.addEventListener('click', () => {
         if (!isGroupingMode && !isFinishGroupingMode) {
-            // Enter Grouping mode
             isGroupingMode = true;
             groupBtn.textContent = 'Group Selected';
             groupBtn.classList.add('bg-green-500', 'hover:bg-green-600');
@@ -344,7 +408,6 @@ document.addEventListener('DOMContentLoaded', function () {
             addGroupColumn();
             alert('Entered Grouping mode. Select consecutive rows and click "Group Selected".');
         } else if (isGroupingMode) {
-            // Perform grouping
             if (selectedInterpreterIds.size === 0) {
                 alert('Please select at least one interpreter to group.');
                 return;
@@ -382,7 +445,6 @@ document.addEventListener('DOMContentLoaded', function () {
             groupCell.rowSpan = selectedRows.length;
             groupCell.innerHTML = `<input type="text" class="w-full h-full bg-gray-300 border-none focus:outline-none text-center font-bold" placeholder="Group Name">`;
 
-            // Ensure all selected rows maintain column alignment
             for (let i = 1; i < selectedRows.length; i++) {
                 const currentRow = selectedRows[i];
                 const oldGroupCell = currentRow.querySelector('.group-cell');
@@ -398,6 +460,7 @@ document.addEventListener('DOMContentLoaded', function () {
             groupInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     groups.push({ startId: firstRow.dataset.id, endId: lastRow.dataset.id, name: groupInput.value || `Group ${groups.length + 1}` });
+                    saveGroupsToFirestore();
                     finishGrouping();
                 }
             });
@@ -423,6 +486,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (endRow.classList.contains('header-row')) continue;
                 }
                 groups.push({ startId: startRow.dataset.id, endId: endRow.dataset.id, name: groupName });
+                saveGroupsToFirestore();
             }
             finishGrouping();
         }
@@ -444,6 +508,18 @@ document.addEventListener('DOMContentLoaded', function () {
         updateRosterTable();
     });
 
+    // --- Clear Settings Button ---
+    clearSettingsBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to clear all grouping settings? This cannot be undone.')) {
+            clearSettings();
+        }
+    });
+
+    // --- Save Positions to Firestore ---
+    async function savePositionsToFirestore() {
+        await db.collection('calendar').doc('positions').set({ positions });
+    }
+
     // --- Initialize ---
-    loadData();
+    loadInitialData().then(setupRealTimeListeners);
 });
