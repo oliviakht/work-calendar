@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- Firestore Save Functions ---
     async function saveInterpretersToFirestore() {
-        await db.collection('calendar').doc('interpreters').set({ interpreters });
+        await db.collection('calendar').doc('interpreters').set({ interpreters: Object.values(interpreters) });
     }
 
     async function saveAssignmentsToFirestore(interpreterId, assignments) {
@@ -58,7 +58,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         db.collection('calendar').doc('interpreters').onSnapshot((doc) => {
-            interpreters = doc.exists ? Object.fromEntries(doc.data().interpreters.map(i => [i.id, i])) : {};
+            const interpretersData = doc.exists ? doc.data().interpreters : {};
+            interpreters = Array.isArray(interpretersData)
+                ? Object.fromEntries(interpretersData.map(i => [i.id, i]))
+                : interpretersData;
             updateRosterTable();
         });
 
@@ -82,7 +85,10 @@ document.addEventListener('DOMContentLoaded', function () {
             db.collection('calendar').doc('groups').get()
         ]);
         events = eventDoc.exists ? eventDoc.data().events : [];
-        interpreters = interpreterDoc.exists ? Object.fromEntries(interpreterDoc.data().interpreters.map(i => [i.id, i])) : {};
+        const interpretersData = interpreterDoc.exists ? interpreterDoc.data().interpreters : {};
+        interpreters = Array.isArray(interpretersData)
+            ? Object.fromEntries(interpretersData.map(i => [i.id, i]))
+            : interpretersData;
         interpreterAssignments = assignmentDoc.exists ? assignmentDoc.data() : {};
         groups = groupDoc.exists ? groupDoc.data().groups : [];
         populateEventDropdown();
@@ -149,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const assignedInterpreterIds = selectedEvent.interpreterIds || [];
         assignedInterpreterIds.map((intId, index) => {
-            const interpreter = interpreters[intId];
+            const interpreter = interpreters[intId] || (Array.isArray(interpreters) ? interpreters.find(i => i.id === intId) : null);
             if (!interpreter) return null;
 
             const row = document.createElement('tr');

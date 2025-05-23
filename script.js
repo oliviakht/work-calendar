@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', function () {
     // --- Firebase Setup ---
     const firebaseConfig = {
@@ -29,7 +30,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function loadInterpretersFromFirestore() {
         const doc = await db.collection('calendar').doc('interpreters').get();
-        return doc.exists ? doc.data().interpreters : [];
+        if (!doc.exists) return [];
+        const interpretersData = doc.data().interpreters;
+        return Array.isArray(interpretersData) ? interpretersData : Object.values(interpretersData);
     }
 
     async function saveAssignmentsToFirestore(interpreterId, assignments) {
@@ -449,7 +452,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const assignedDiv = row.querySelector(`#assigned-interpreters-${event.id}`);
             assignedDiv.innerHTML = '';
             (event.interpreterIds || []).forEach(intId => {
-                const interpreter = interpreters.find(i => i.id === intId);
+                const interpreter = Array.isArray(interpreters) ? interpreters.find(i => i.id === intId) : null;
                 if (!interpreter) return;
                 const chip = document.createElement('span');
                 chip.className = 'assigned-chip';
@@ -640,23 +643,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function renderInterpreters() {
         elements.interpreterList.innerHTML = '';
-        interpreters.forEach((interpreter, index) => {
+        // Sort interpreters by id (numeric comparison for timestamps)
+        interpreters.sort((a, b) => parseInt(a.id) - parseInt(b.id)).forEach((interpreter, index) => {
             const row = document.createElement('tr');
             row.dataset.id = interpreter.id;
             row.draggable = true;
             row.className = assigningInterpreter && assigningInterpreter.id === interpreter.id ? 'interpreter-assigned' : '';
             row.innerHTML = `
-                <td>
-                    <div class="flex items-center">
-                        <div class="w-full text-center">${interpreter.name}</div>
-                        <span class="drag-handle" title="Drag to reorder">☰</span>
-                    </div>
-                </td>
-                <td><button class="assign-mode-btn" title="Assign Working Days">🗓️</button></td>
-                <td><button class="edit-int" title="Edit">✏️</button></td>
-                <td><button class="delete-int" title="Delete">🗑️</button></td>
-            `;
+            <td>
+                <div class="flex items-center">
+                    <div class="w-full text-center">${interpreter.name}</div>
+                    <span class="drag-handle" title="Drag to reorder">☰</span>
+                </div>
+            </td>
+            <td><button class="assign-mode-btn" title="Assign Working Days">🗓️</button></td>
+            <td><button class="edit-int" title="Edit">✏️</button></td>
+            <td><button class="delete-int" title="Delete">🗑️</button></td>
+        `;
 
+            // Rest of the function remains unchanged
             row.addEventListener('dragstart', (e) => {
                 e.dataTransfer.setData('text/plain', interpreter.id);
                 row.classList.add('dragging');
@@ -792,9 +797,9 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     async function loadAllDataAndRender() {
-        events = await loadEventsFromFirestore();
-        interpreters = await loadInterpretersFromFirestore();
-        interpreterAssignments = await loadAssignmentsFromFirestore();
+        events = (await loadEventsFromFirestore()) || [];
+        interpreters = (await loadInterpretersFromFirestore()) || [];
+        interpreterAssignments = (await loadAssignmentsFromFirestore()) || {};
         events.forEach(ev => {
             ev.classNames = getEventClassNames(ev);
             calendar.addEvent(ev);
