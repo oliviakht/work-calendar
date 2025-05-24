@@ -96,11 +96,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- Populate Event Dropdown ---
     function populateEventDropdown() {
-        const today = new Date('2025-05-18T14:45:00-06:00'); // Updated to current time
+        const today = new Date(); // Current date and time in local timezone (HKT)
         eventDropdown.innerHTML = '<option value="">Select an Event</option>';
         events.forEach(event => {
             const endDate = new Date(event.end);
-            if (endDate >= today) {
+            if (endDate > today) {
                 const option = document.createElement('option');
                 option.value = event.id;
                 option.textContent = `${event.title} (${event.start} to ${event.end})`;
@@ -143,8 +143,14 @@ document.addEventListener('DOMContentLoaded', function () {
             dateColumns.push(d.toISOString().split('T')[0]);
         }
 
-        while (tableHeadRow.children.length > (hasGroupColumn ? 6 : 5)) {
+        // Reset header row to base columns (No., Name, Full Name, G., Position) + date columns
+        while (tableHeadRow.children.length > 5) {
             tableHeadRow.removeChild(tableHeadRow.lastChild);
+        }
+        if (hasGroupColumn) {
+            const groupHeader = document.createElement('th');
+            groupHeader.className = 'p-2 border';
+            tableHeadRow.insertBefore(groupHeader, tableHeadRow.firstChild);
         }
         dateColumns.forEach(date => {
             const th = document.createElement('th');
@@ -210,21 +216,82 @@ document.addEventListener('DOMContentLoaded', function () {
 
             row.addEventListener('drop', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 const draggedId = e.dataTransfer.getData('text/plain');
                 const draggedRow = document.querySelector(`tr[data-id="${draggedId}"]`);
                 const targetRow = row;
 
                 if (draggedId !== intId && draggedRow && targetRow) {
-                    const draggedIndex = Array.from(rosterList.children).indexOf(draggedRow);
-                    const targetIndex = Array.from(rosterList.children).indexOf(targetRow);
+                    const rows = Array.from(rosterList.querySelectorAll('tr:not(.header-row)'));
+                    const targetIndex = rows.indexOf(targetRow);
+
+                    // Remove dragged row from its current group
+                    groups = groups.filter(g => {
+                        if (g.startId === draggedId) {
+                            // Dragged row was group start; try to update startId
+                            const groupRows = rows.filter(r => g.startId === r.dataset.id || g.endId === r.dataset.id);
+                            if (groupRows.length > 1) {
+                                g.startId = groupRows[1].dataset.id;
+                                return true;
+                            }
+                            return false; // Delete group if only one row
+                        } else if (g.endId === draggedId) {
+                            // Dragged row was group end; update endId
+                            const groupRows = rows.filter(r => g.startId === r.dataset.id || g.endId === r.dataset.id);
+                            if (groupRows.length > 1) {
+                                g.endId = groupRows[groupRows.length - 2].dataset.id;
+                                return true;
+                            }
+                            return false;
+                        } else if (g.startId !== draggedId && g.endId !== draggedId) {
+                            // Check if dragged row is in the middle of the group
+                            const groupStartIndex = rows.findIndex(r => r.dataset.id === g.startId);
+                            const groupEndIndex = rows.findIndex(r => r.dataset.id === g.endId);
+                            if (groupStartIndex !== -1 && groupEndIndex !== -1 && groupStartIndex < groupEndIndex) {
+                                const draggedIndex = rows.findIndex(r => r.dataset.id === draggedId);
+                                if (draggedIndex >= groupStartIndex && draggedIndex <= groupEndIndex) {
+                                    // Row was in group; keep group if still valid
+                                    return groupEndIndex - groupStartIndex >= 1;
+                                }
+                            }
+                            return true;
+                        }
+                        return true;
+                    });
+
+                    // Move the row
                     rosterList.removeChild(draggedRow);
                     rosterList.insertBefore(draggedRow, targetRow);
+
+                    // Add dragged row to target group (if applicable)
+                    const targetGroup = groups.find(g => {
+                        const startIndex = rows.findIndex(r => r.dataset.id === g.startId);
+                        const endIndex = rows.findIndex(r => r.dataset.id === g.endId);
+                        return startIndex !== -1 && endIndex !== -1 && targetIndex >= startIndex && targetIndex <= endIndex + 1;
+                    });
+
+                    if (targetGroup) {
+                        const startIndex = rows.findIndex(r => r.dataset.id === targetGroup.startId);
+                        const endIndex = rows.findIndex(r => r.dataset.id === targetGroup.endId);
+                        if (targetIndex === endIndex + 1) {
+                            // Dropped just after the group; extend endId
+                            targetGroup.endId = draggedId;
+                        } else if (targetIndex === startIndex) {
+                            // Dropped at group start; update startId
+                            targetGroup.startId = draggedId;
+                        }
+                        // If dropped in middle, group is already valid
+                    }
+
                     updateRowNumbers();
                     applyGroups();
 
-                    const newOrder = Array.from(rosterList.querySelectorAll('tr:not(.header-row)')).map(r => r.dataset.id);
-                    selectedEvent.interpreterIds = newOrder;
-                    saveEventsToFirestore(events);
+                    const newOrder = rows.map(r => r.dataset.id);
+                    const selectedEvent = events.find(e => e.id === eventDropdown.value);
+                    if (selectedEvent) {
+                        selectedEvent.interpreterIds = newOrder;
+                        // saveEventsToFirestore(events); // Skipped for now
+                    }
                 }
             });
 
@@ -298,62 +365,66 @@ document.addEventListener('DOMContentLoaded', function () {
         const rows = Array.from(rosterList.querySelectorAll('tr:not(.header-row)'));
         if (!rows.length) return;
 
-        if (!hasGroupColumn) {
-            rows.forEach((row, index) => {
-                const orderCell = row.querySelector('.order-cell');
-                orderCell.textContent = (index + 1).toString();
-            });
-        } else {
-            let orderIndex = 1;
-            rows.forEach((row, index) => {
-                const groupCell = row.querySelector('.group-cell');
-                if (groupCell && groupCell.rowSpan > 1) {
-                    orderIndex = 1;
-                }
-                const orderCell = row.querySelector('.order-cell');
-                orderCell.textContent = orderIndex++;
-            });
-        }
+        rows.forEach((row, index) => {
+            const orderCell = row.querySelector('.order-cell');
+            orderCell.textContent = (index + 1).toString();
+        });
     }
 
     // --- Apply Existing Groups ---
     function applyGroups() {
         const rows = Array.from(rosterList.querySelectorAll('tr:not(.header-row)'));
+        groups = groups.filter(group => {
+            const startIndex = rows.findIndex(row => row.dataset.id === group.startId);
+            const endIndex = rows.findIndex(row => row.dataset.id === group.endId);
+            return startIndex !== -1 && endIndex !== -1 && startIndex <= endIndex;
+        });
+
+        // Reset group cells
+        rows.forEach(row => {
+            let groupCell = row.querySelector('.group-cell');
+            if (groupCell && groupCell.rowSpan > 1) {
+                groupCell.rowSpan = 1;
+                groupCell.innerHTML = '';
+                groupCell.style.height = '';
+                groupCell.className = 'p-2 border group-cell';
+            } else if (!groupCell && hasGroupColumn) {
+                groupCell = document.createElement('td');
+                groupCell.className = 'p-2 border group-cell';
+                row.insertBefore(groupCell, row.firstChild);
+            }
+        });
+
         groups.forEach(group => {
             const startIndex = rows.findIndex(row => row.dataset.id === group.startId);
             const endIndex = rows.findIndex(row => row.dataset.id === group.endId);
             if (startIndex !== -1 && endIndex !== -1 && startIndex <= endIndex) {
                 const firstRow = rows[startIndex];
                 const groupCell = firstRow.querySelector('.group-cell');
-                if (groupCell && !groupCell.querySelector('input')) {
-                    groupCell.className = 'p-2 border bg-gray-300 font-bold group-cell';
-                    groupCell.style.writingMode = 'vertical-rl';
-                    groupCell.style.transform = 'rotate(180deg)';
-                    groupCell.style.textAlign = 'center';
-                    groupCell.style.height = `${(endIndex - startIndex + 1) * 40}px`;
-                    groupCell.rowSpan = endIndex - startIndex + 1;
-                    groupCell.innerHTML = `<input type="text" class="w-full h-full bg-gray-300 border-none focus:outline-none text-center font-bold" value="${group.name}" placeholder="Group Name">`;
+                groupCell.className = 'p-2 border bg-gray-300 font-bold group-cell';
+                groupCell.style.writingMode = 'vertical-rl';
+                groupCell.style.transform = 'rotate(180deg)';
+                groupCell.style.textAlign = 'center';
+                groupCell.style.height = `${(endIndex - startIndex + 1) * 40}px`;
+                groupCell.rowSpan = endIndex - startIndex + 1;
+                groupCell.innerHTML = `<input type="text" class="w-full h-full bg-gray-300 border-none focus:outline-none text-center font-bold" value="${group.name}" placeholder="Group Name">`;
 
-                    for (let i = startIndex + 1; i <= endIndex; i++) {
-                        const currentRow = rows[i];
-                        const oldGroupCell = currentRow.querySelector('.group-cell');
-                        if (oldGroupCell) {
-                            currentRow.removeChild(oldGroupCell);
-                            const newGroupCell = document.createElement('td');
-                            newGroupCell.className = 'p-2 border group-cell';
-                            currentRow.insertBefore(newGroupCell, currentRow.firstChild);
-                        }
+                for (let i = startIndex + 1; i <= endIndex; i++) {
+                    const currentRow = rows[i];
+                    const oldGroupCell = currentRow.querySelector('.group-cell');
+                    if (oldGroupCell) {
+                        currentRow.removeChild(oldGroupCell);
                     }
-
-                    const groupInput = groupCell.querySelector('input');
-                    groupInput.addEventListener('keypress', (e) => {
-                        if (e.key === 'Enter') {
-                            group.name = groupInput.value || `Group ${groups.length + 1}`;
-                            saveGroupsToFirestore();
-                            finishGrouping();
-                        }
-                    });
                 }
+
+                const groupInput = groupCell.querySelector('input');
+                groupInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        group.name = groupInput.value || `Group ${groups.length + 1}`;
+                        // saveGroupsToFirestore(); // Skipped for now
+                        finishGrouping();
+                    }
+                });
             }
         });
     }
@@ -388,20 +459,37 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // --- Clear Settings ---
-    function clearSettings() {
+    function clearSettings(showConfirm = false) {
+        if (showConfirm && !confirm('Are you sure you want to clear all grouping settings? This cannot be undone.')) return;
+
         groups = [];
         hasGroupColumn = false;
-        saveGroupsToFirestore();
-        updateRosterTable();
-        while (tableHeadRow.firstChild && tableHeadRow.firstChild.className === 'p-2 border') {
+        // saveGroupsToFirestore(); // Skipped for now
+
+        // Remove group column header
+        if (tableHeadRow.firstChild && tableHeadRow.firstChild.className === 'p-2 border') {
             tableHeadRow.removeChild(tableHeadRow.firstChild);
         }
-        const rows = Array.from(rosterList.querySelectorAll('tr:not(.header-row)'));
-        rows.forEach(row => {
-            if (row.querySelector('.group-cell')) {
-                row.removeChild(row.querySelector('.group-cell'));
+
+        // Remove all header rows except the topmost one
+        const allHeaderRows = rosterList.querySelectorAll('tr.header-row');
+        allHeaderRows.forEach((headerRow, index) => {
+            if (index > 0) { // Keep the first header row (topmost)
+                rosterList.removeChild(headerRow);
             }
         });
+
+        // Remove group cells from data rows
+        const rows = Array.from(rosterList.querySelectorAll('tr:not(.header-row)'));
+        rows.forEach(row => {
+            const groupCell = row.querySelector('.group-cell');
+            if (groupCell) {
+                row.removeChild(groupCell);
+            }
+        });
+
+        // Re-render table to reset columns, preserving order
+        updateRosterTable();
     }
 
     // --- Group Button Functionality ---
@@ -412,7 +500,6 @@ document.addEventListener('DOMContentLoaded', function () {
             groupBtn.classList.add('bg-green-500', 'hover:bg-green-600');
             groupBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
             addGroupColumn();
-            alert('Entered Grouping mode. Select consecutive rows and click "Group Selected".');
         } else if (isGroupingMode) {
             if (selectedInterpreterIds.size === 0) {
                 alert('Please select at least one interpreter to group.');
@@ -435,6 +522,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const firstRowIndex = rows.indexOf(firstRow);
             const lastRow = selectedRows[selectedRows.length - 1];
 
+            // Add header row if needed
             if (firstRowIndex > 0 && (!firstRow.previousElementSibling || !firstRow.previousElementSibling.classList.contains('header-row'))) {
                 const headerRow = document.createElement('tr');
                 headerRow.className = 'header-row bg-gray-200';
@@ -442,6 +530,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 rosterList.insertBefore(headerRow, firstRow);
             }
 
+            // Set group cell in first row's group column
             const groupCell = firstRow.querySelector('.group-cell');
             groupCell.className = 'p-2 border bg-gray-300 font-bold group-cell';
             groupCell.style.writingMode = 'vertical-rl';
@@ -451,14 +540,12 @@ document.addEventListener('DOMContentLoaded', function () {
             groupCell.rowSpan = selectedRows.length;
             groupCell.innerHTML = `<input type="text" class="w-full h-full bg-gray-300 border-none focus:outline-none text-center font-bold" placeholder="Group Name">`;
 
+            // Remove group cells from subsequent selected rows
             for (let i = 1; i < selectedRows.length; i++) {
                 const currentRow = selectedRows[i];
                 const oldGroupCell = currentRow.querySelector('.group-cell');
                 if (oldGroupCell) {
                     currentRow.removeChild(oldGroupCell);
-                    const newGroupCell = document.createElement('td');
-                    newGroupCell.className = 'p-2 border group-cell';
-                    currentRow.insertBefore(newGroupCell, currentRow.firstChild);
                 }
             }
 
@@ -466,10 +553,17 @@ document.addEventListener('DOMContentLoaded', function () {
             groupInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     groups.push({ startId: firstRow.dataset.id, endId: lastRow.dataset.id, name: groupInput.value || `Group ${groups.length + 1}` });
-                    saveGroupsToFirestore();
+                    // saveGroupsToFirestore(); // Skipped for now
                     finishGrouping();
                 }
             });
+
+            // Store current group details for "Finish Grouping"
+            window.currentGroup = {
+                startId: firstRow.dataset.id,
+                endId: lastRow.dataset.id,
+                input: groupInput
+            };
 
             isGroupingMode = false;
             isFinishGroupingMode = true;
@@ -479,20 +573,19 @@ document.addEventListener('DOMContentLoaded', function () {
             selectedInterpreterIds.clear();
             rosterList.querySelectorAll('tr').forEach(row => row.classList.remove('selected'));
         } else if (isFinishGroupingMode) {
-            const currentInput = rosterList.querySelector('input:focus');
-            if (currentInput) {
-                const groupCell = currentInput.closest('td');
-                const groupName = currentInput.value || `Group ${groups.length + 1}`;
-                const startRow = groupCell.parentElement;
-                let endRow = startRow;
-                let rowSpan = groupCell.rowSpan;
-                while (endRow.nextElementSibling && rowSpan > 1) {
-                    endRow = endRow.nextElementSibling;
-                    rowSpan--;
-                    if (endRow.classList.contains('header-row')) continue;
+            if (window.currentGroup) {
+                const { startId, endId, input } = window.currentGroup;
+                const groupName = input.value || `Group ${groups.length + 1}`;
+                groups.push({ startId, endId, name: groupName });
+                // saveGroupsToFirestore(); // Skipped for now
+                delete window.currentGroup; // Clear temporary state
+            } else {
+                // If no group is being created, remove header row if added
+                const rows = Array.from(rosterList.querySelectorAll('tr:not(.header-row)'));
+                const firstGroupedRow = rows.find(row => row.querySelector('.group-cell')?.rowSpan > 1);
+                if (firstGroupedRow && firstGroupedRow.previousElementSibling?.classList.contains('header-row')) {
+                    rosterList.removeChild(firstGroupedRow.previousElementSibling);
                 }
-                groups.push({ startId: startRow.dataset.id, endId: endRow.dataset.id, name: groupName });
-                saveGroupsToFirestore();
             }
             finishGrouping();
         }
@@ -511,14 +604,13 @@ document.addEventListener('DOMContentLoaded', function () {
         while (tableHeadRow.firstChild.tagName === 'TH' && tableHeadRow.firstChild.textContent === '') {
             tableHeadRow.removeChild(tableHeadRow.firstChild);
         }
+        clearSettings(false); // Skip confirm dialog
         updateRosterTable();
     });
 
     // --- Clear Settings Button ---
     clearSettingsBtn.addEventListener('click', () => {
-        if (confirm('Are you sure you want to clear all grouping settings? This cannot be undone.')) {
-            clearSettings();
-        }
+        clearSettings(true); // Pass flag to show confirm dialog
     });
 
     // --- Save Positions to Firestore ---
